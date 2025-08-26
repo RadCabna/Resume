@@ -33,4 +33,22 @@ class Arrays {
         StepMenu(stepNumber: 7, title: "Suggestions", iconName: "suggestionsIcon", iconOff: "sideIconOff_7"),
         StepMenu(stepNumber: 8, title: "Finish", iconName: "finishIcon", iconOff: "sideIconOff_8")
         ]
+    
+    static var stepsTextArray = [stepsTextScreen_1, stepsTextScreen_2]
+    
+    static var stepsTextScreen_1 = [
+        "Hello!",
+        "Ready to get started?",
+        "Name",
+        "Surname"
+    ]
+    
+    static var stepsTextScreen_2 = [
+        "How do you prefer your employer to contact you?",
+        "Most employers use email for first contact, so it's important to provide an up-to-date email address.",
+        "Email Address",
+        "Phone Number",
+        "Personal Website",
+        "Adress"
+    ]
 }

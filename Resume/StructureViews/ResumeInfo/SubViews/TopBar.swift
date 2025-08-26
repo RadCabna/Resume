@@ -66,6 +66,12 @@ struct TopBar: View {
                                        
                                     }
                                 }
+                                .onTapGesture {
+                                    stepNumber = item
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        showHideSideMenu()
+                                    }
+                                }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,9 +93,6 @@ struct TopBar: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(height: screenHeight*0.04)
-                                .onTapGesture {
-                                    stepNumber += 1
-                                }
                             Spacer()
                             Image(.limitsFrame)
                                 .resizable()
