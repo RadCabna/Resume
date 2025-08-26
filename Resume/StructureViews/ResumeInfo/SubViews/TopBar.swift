@@ -9,11 +9,12 @@ import SwiftUI
 
 struct TopBar: View {
     @AppStorage("limits") var limits = 3
+    @ObservedObject var formData: SurveyFormData
     @State private var stepMenuOffset: CGFloat = 0
     @State private var arrowScale: CGFloat = 1
     @State private var arrowSide: CGFloat = -1
     @State private var stepMenuArray = Arrays.stepMenuArray
-    @State private var stepMenuPresented = false
+    @Binding var stepMenuPresented: Bool
     @State private var shadowOpacity: CGFloat = 0
     @Binding var stepNumber: Int
     var body: some View {
@@ -190,7 +191,7 @@ struct TopBar: View {
     func changeBackOpacity() {
         withAnimation(Animation.easeOut(duration: 0.3)) {
             if stepMenuPresented {
-                shadowOpacity = 0.3
+                shadowOpacity = 0.2
             } else {
                 shadowOpacity = 0
             }
@@ -232,5 +233,9 @@ struct TopBar: View {
 }
 
 #Preview {
-    TopBar(stepNumber: .constant(0))
+    let testFormData = SurveyFormData()
+//    testFormData.name = "Алексей"
+//    testFormData.surname = "Петров"
+    
+    TopBar(formData: testFormData, stepMenuPresented: .constant(false), stepNumber: .constant(0))
 }

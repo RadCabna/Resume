@@ -10,6 +10,7 @@ import SwiftUI
 struct Contacts: View {
     @State private var stepNumber = 1
     @State private var stepsTextArray = Arrays.stepsTextArray
+    @ObservedObject var formData: SurveyFormData
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading) {
@@ -24,35 +25,60 @@ struct Contacts: View {
                 Text(stepsTextArray[stepNumber][2])
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                     .foregroundStyle(Color.black)
-                Image(.textFieldFrame)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: screenWidth*0.9)
+                ZStack {
+                    Image(.textFieldFrame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: screenWidth*0.9)
+                    TextField("example@mail.com", text: $formData.email)
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                        .foregroundStyle(Color.black)
+                        .padding(.horizontal, screenWidth*0.1)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                }
                 Text(stepsTextArray[stepNumber][3])
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                     .foregroundStyle(Color.black)
-                Image(.textFieldFrame)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: screenWidth*0.9)
+                ZStack {
+                    Image(.textFieldFrame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: screenWidth*0.9)
+                    TextField("+7 (123) 456-78-90", text: $formData.phone)
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                        .foregroundStyle(Color.black)
+                        .padding(.horizontal, screenWidth*0.1)
+                        .keyboardType(.phonePad)
+                }
                 Text(stepsTextArray[stepNumber][4])
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                     .foregroundStyle(Color.black)
-                Image(.textFieldFrame)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: screenWidth*0.9)
+                ZStack {
+                    Image(.textFieldFrame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: screenWidth*0.9)
+                    TextField("https://your-website.com", text: $formData.website)
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                        .foregroundStyle(Color.black)
+                        .padding(.horizontal, screenWidth*0.1)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+                }
                 Text(stepsTextArray[stepNumber][5])
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                     .foregroundStyle(Color.black)
-                Image(.textFieldFrame)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: screenWidth*0.9)
-                Image(.textFieldFrame)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: screenWidth*0.9)
+                ZStack {
+                    Image(.textFieldFrame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: screenWidth*0.9)
+                    TextField("Город, улица, дом", text: $formData.address)
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                        .foregroundStyle(Color.black)
+                        .padding(.horizontal, screenWidth*0.1)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .frame(maxWidth: screenWidth*0.9)
@@ -63,5 +89,12 @@ struct Contacts: View {
 }
 
 #Preview {
-    Contacts()
+    // Создаем тестовые данные для превью
+    let testFormData = SurveyFormData()
+    testFormData.email = "test@example.com"
+    testFormData.phone = "+7 123 456 78 90"
+    testFormData.website = "https://example.com"
+    testFormData.address = "Москва, Красная площадь, 1"
+    
+    return Contacts(formData: testFormData)
 }

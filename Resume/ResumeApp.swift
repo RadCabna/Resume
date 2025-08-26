@@ -13,7 +13,7 @@ struct ResumeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainMenuView()
+            MainView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
