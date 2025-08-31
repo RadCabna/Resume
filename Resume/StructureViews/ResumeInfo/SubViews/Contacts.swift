@@ -19,7 +19,7 @@ struct Contacts: View {
                     .foregroundStyle(Color.black)
                     .lineSpacing(0)
                 Text(stepsTextArray[stepNumber][1])
-                    .font(Font.custom("Figtree-Medium", size: screenHeight*0.015))
+                    .font(Font.custom("Figtree-Medium", size: screenHeight*0.017))
                     .foregroundStyle(Color.onboardingColor2)
                     .padding(.bottom, screenHeight*0.04)
                 Text(stepsTextArray[stepNumber][2])
@@ -30,12 +30,14 @@ struct Contacts: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenWidth*0.9)
-                    TextField("example@mail.com", text: $formData.email)
-                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                    TextField("JakeParker@gmail.com", text: $formData.email)
+                        .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
                         .foregroundStyle(Color.black)
                         .padding(.horizontal, screenWidth*0.1)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .textContentType(.emailAddress)
                 }
                 Text(stepsTextArray[stepNumber][3])
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
@@ -45,7 +47,7 @@ struct Contacts: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenWidth*0.9)
-                    TextField("+7 (123) 456-78-90", text: $formData.phone)
+                    TextField("(415) 555-7293", text: $formData.phone)
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
                         .foregroundStyle(Color.black)
                         .padding(.horizontal, screenWidth*0.1)
@@ -59,7 +61,7 @@ struct Contacts: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenWidth*0.9)
-                    TextField("https://your-website.com", text: $formData.website)
+                    TextField("www.example.com", text: $formData.website)
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
                         .foregroundStyle(Color.black)
                         .padding(.horizontal, screenWidth*0.1)
@@ -74,7 +76,17 @@ struct Contacts: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenWidth*0.9)
-                    TextField("Город, улица, дом", text: $formData.address)
+                    TextField("1 First Avenue", text: $formData.address)
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
+                        .foregroundStyle(Color.black)
+                        .padding(.horizontal, screenWidth*0.1)
+                }
+                ZStack {
+                    Image(.textFieldFrame)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: screenWidth*0.9)
+                    TextField("Astoria, NY 11102", text: $formData.adress_1)
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
                         .foregroundStyle(Color.black)
                         .padding(.horizontal, screenWidth*0.1)
@@ -91,10 +103,10 @@ struct Contacts: View {
 #Preview {
     // Создаем тестовые данные для превью
     let testFormData = SurveyFormData()
-    testFormData.email = "test@example.com"
-    testFormData.phone = "+7 123 456 78 90"
-    testFormData.website = "https://example.com"
-    testFormData.address = "Москва, Красная площадь, 1"
+//    testFormData.email = "test@example.com"
+//    testFormData.phone = "+7 123 456 78 90"
+//    testFormData.website = "https://example.com"
+//    testFormData.address = "Москва, Красная площадь, 1"
     
     return Contacts(formData: testFormData)
 }

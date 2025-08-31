@@ -65,7 +65,6 @@ struct MainView: View {
         case 1:
             Contacts(formData: surveyManager.formData)
         // Добавьте здесь остальные экраны по мере их создания
-        // case 2: Experience(formData: surveyManager.formData)
         // case 3: Education(formData: surveyManager.formData)
         // case 4: Skills(formData: surveyManager.formData)
         // case 5: Projects(formData: surveyManager.formData)

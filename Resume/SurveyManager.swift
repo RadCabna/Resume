@@ -14,45 +14,40 @@ class SurveyManager: ObservableObject {
     // Текущий шаг опроса (0-7 для 8 экранов)
     @Published var stepNumber = 0
     
-    // Временные данные формы (в оперативной памяти)
+    // Данные форм в оперативной памяти
     @Published var formData = SurveyFormData()
     
-    // Черновик в CoreData (сохраняется на диск)
+    // Текущий черновик Person в CoreData
     @Published var draftPerson: Person?
     
-    // Контекст CoreData для работы с базой данных
+    // CoreData context
     private let viewContext: NSManagedObjectContext
     
-    // Инициализация с контекстом CoreData
     init(context: NSManagedObjectContext) {
         self.viewContext = context
-        // При создании сразу загружаем или создаем черновик
         loadOrCreateDraft()
     }
     
     // MARK: - Управление черновиками
     
     // Загружаем существующий черновик или создаем новый
-    private func loadOrCreateDraft() {
-        // Ищем незавершенный черновик в CoreData
+    func loadOrCreateDraft() {
+        // Пытаемся найти незавершенный черновик
         let request: NSFetchRequest<Person> = Person.fetchRequest()
-        request.predicate = NSPredicate(format: "isComplete == false AND isDraft == true")
+        request.predicate = NSPredicate(format: "isDraft == true AND isComplete == false")
+        request.sortDescriptors = [NSSortDescriptor(key: "lastModified", ascending: false)]
         request.fetchLimit = 1
         
         do {
-            let existingDrafts = try viewContext.fetch(request)
-            if let existingDraft = existingDrafts.first {
-                // Если нашли черновик - загружаем его
+            let drafts = try viewContext.fetch(request)
+            if let existingDraft = drafts.first {
                 draftPerson = existingDraft
                 loadDataFromDraft()
-                print("Загружен существующий черновик")
             } else {
-                // Если черновика нет - создаем новый
                 createNewDraft()
-                print("Создан новый черновик")
             }
         } catch {
-            print("Ошибка поиска черновика: \(error)")
+            print("Ошибка загрузки черновика: \(error)")
             createNewDraft()
         }
     }
@@ -79,6 +74,9 @@ class SurveyManager: ObservableObject {
         formData.phone = draft.phone ?? ""
         formData.website = draft.website ?? ""
         formData.address = draft.address ?? ""
+        formData.adress_1 = draft.adress_1 ?? ""
+        
+//        adress_1
     }
     
     // Сохраняем данные из formData в черновик CoreData
@@ -92,6 +90,7 @@ class SurveyManager: ObservableObject {
         draft.phone = formData.phone
         draft.website = formData.website
         draft.address = formData.address
+        draft.adress_1 = formData.adress_1
         draft.lastModified = Date()
         
         // Сохраняем в базу данных
@@ -105,37 +104,33 @@ class SurveyManager: ObservableObject {
     
     // MARK: - Навигация между экранами
     
-    // Переход к следующему экрану
+    // Переход на следующий экран
     func nextStep() {
-        // Сначала сохраняем текущие данные в черновик
         saveDraft()
-        
-        // Переходим к следующему экрану (максимум 7, так как у нас 8 экранов: 0-7)
+
         if stepNumber < 7 {
             stepNumber += 1
-            print("Переход на экран \(stepNumber)")
+        } else {
+            _ = completeSurvey()
         }
     }
     
-    // Переход к предыдущему экрану
+    // Переход на предыдущий экран
     func previousStep() {
-        // Сохраняем данные перед переходом
+        // Сохраняем данные в CoreData
         saveDraft()
         
-        // Возвращаемся к предыдущему экрану
         if stepNumber > 0 {
             stepNumber -= 1
-            print("Возврат на экран \(stepNumber)")
         }
     }
     
-    // MARK: - Завершение опроса
-    
-    // Финальное сохранение (завершение всего опроса)
+    // Завершение опроса (помечаем черновик как завершенный)
+    @discardableResult
     func completeSurvey() -> Bool {
         guard let draft = draftPerson else { return false }
         
-        // Сохраняем последние изменения
+        // Финальное сохранение данных
         saveDraft()
         
         // Помечаем как завершенный (больше не черновик)
@@ -161,41 +156,34 @@ class SurveyManager: ObservableObject {
     
     // MARK: - Валидация
     
-    // Проверяем, валидны ли данные на текущем экране
+    // Проверяем валидность текущего экрана
     func isCurrentStepValid() -> Bool {
         switch stepNumber {
-        case 0: // Intro - имя и фамилия обязательны
-            return !formData.name.trimmingCharacters(in: .whitespaces).isEmpty && 
+        case 0: // Intro экран - имя и фамилия
+            return !formData.name.trimmingCharacters(in: .whitespaces).isEmpty &&
                    !formData.surname.trimmingCharacters(in: .whitespaces).isEmpty
-        case 1: // Contacts - email обязателен
+            
+        case 1: // Contacts экран - email обязателен
             return !formData.email.trimmingCharacters(in: .whitespaces).isEmpty
-        default: // Остальные экраны пока считаем валидными
-            return true
+            
+        default:
+            return true // Остальные экраны пока не проверяем
         }
-    }
-    
-    // Проверяем, можно ли завершить весь опрос
-    func canCompleteSurvey() -> Bool {
-        return !formData.name.isEmpty && 
-               !formData.surname.isEmpty && 
-               !formData.email.isEmpty
     }
 }
 
-// MARK: - Модель данных формы (временное хранилище в памяти)
+// MARK: - Data Models
+
+// Класс для хранения данных форм в оперативной памяти
 class SurveyFormData: ObservableObject {
-    // Данные с экрана Intro
+    // Основная информация
     @Published var name = ""
     @Published var surname = ""
-    
-    // Данные с экрана Contacts
     @Published var email = ""
     @Published var phone = ""
     @Published var website = ""
     @Published var address = ""
-    
-    // Здесь можно добавить поля для других экранов
-    // @Published var workExperience = ""
-    // @Published var education = ""
-    // и т.д.
-} 
+    @Published var adress_1 = ""
+}
+
+

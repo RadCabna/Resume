@@ -6,6 +6,7 @@
 //
 
 import CoreData
+//import CoreTransferable
 
 struct PersistenceController {
     static let shared = PersistenceController()
@@ -16,27 +17,31 @@ struct PersistenceController {
         let viewContext = result.container.viewContext
         
         // Создаем примеры Item
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
+//        for _ in 0..<10 {
+//            let newItem = Item(context: viewContext)
+//            newItem.timestamp = Date()
+//        }
         
-        // Создаем примеры Person для превью
-        let samplePerson1 = Person(context: viewContext)
-        samplePerson1.name = "Алексей"
-        samplePerson1.surname = "Петров"
-        samplePerson1.email = "alex.petrov@example.com"
-        samplePerson1.phone = "+7 (999) 123-45-67"
-        samplePerson1.website = "https://alex-petrov.dev"
-        samplePerson1.address = "Санкт-Петербург, Невский пр., д. 100"
-        
-        let samplePerson2 = Person(context: viewContext)
-        samplePerson2.name = "Мария"
-        samplePerson2.surname = "Сидорова"
-        samplePerson2.email = "maria.sidorova@example.com"
-        samplePerson2.phone = "+7 (888) 987-65-43"
-        samplePerson2.website = "https://maria-sidorova.com"
-        samplePerson2.address = "Москва, ул. Тверская, д. 50"
+//         Создаем примеры Person для превью
+//        let samplePerson1 = Person(context: viewContext)
+//        samplePerson1.name = "Алексей"
+//        samplePerson1.surname = "Петров"
+//        samplePerson1.email = "alex.petrov@example.com"
+//        samplePerson1.phone = "+7 (999) 123-45-67"
+//        samplePerson1.website = "https://alex-petrov.dev"
+//        samplePerson1.address = "Санкт-Петербург, Невский пр., д. 100"
+//        samplePerson1.isDraft = false
+//        samplePerson1.isComplete = true
+//        
+//        let samplePerson2 = Person(context: viewContext)
+//        samplePerson2.name = "Мария"
+//        samplePerson2.surname = "Сидорова"
+//        samplePerson2.email = "maria.sidorova@example.com"
+//        samplePerson2.phone = "+7 (888) 987-65-43"
+//        samplePerson2.website = "https://maria-sidorova.com"
+//        samplePerson2.address = "Москва, ул. Тверская, д. 50"
+//        samplePerson2.isDraft = false
+//        samplePerson2.isComplete = true
         
         do {
             try viewContext.save()
