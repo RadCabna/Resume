@@ -11,6 +11,15 @@ struct Intro: View {
     @State private var stepNumber = 0
     @State private var stepsTextArray = Arrays.stepsTextArray
     @ObservedObject var formData: SurveyFormData
+    
+    // Локальные переменные для ввода данных
+    @State private var name = ""
+    @State private var surname = ""
+    
+    func saveIntroData() {
+        formData.name = name
+        formData.surname = surname
+    }
     var body: some View {
         VStack(alignment: .leading) {
             Text(stepsTextArray[stepNumber][0])
@@ -28,7 +37,7 @@ struct Intro: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: screenWidth*0.9)
-                TextField("Jake", text: $formData.name)
+                TextField("Jake", text: $name)
                     .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
                     .foregroundStyle(Color.black)
                     .padding(.horizontal, screenWidth*0.1)
@@ -41,7 +50,7 @@ struct Intro: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: screenWidth*0.9)
-                TextField("Parker", text: $formData.surname)
+                TextField("Parker", text: $surname)
                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.022))
                     .foregroundStyle(Color.black)
                     .padding(.horizontal, screenWidth*0.1)
@@ -50,6 +59,15 @@ struct Intro: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .frame(maxWidth: screenWidth*0.9)
         .padding(.top, screenHeight*0.25)
+        .onAppear {
+            // Загружаем данные из formData в локальные переменные
+            name = formData.name
+            surname = formData.surname
+        }
+        .onDisappear {
+            // Сохраняем данные из локальных переменных в formData
+            saveIntroData()
+        }
     }
 }
 

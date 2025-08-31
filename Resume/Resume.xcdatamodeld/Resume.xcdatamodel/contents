@@ -3,8 +3,8 @@
     <entity name="Education" representedClassName="Education" syncable="YES" codeGenerationType="class">
         <attribute name="isCurrentlyStudying" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="schoolName" optional="YES" attributeType="String"/>
-        <attribute name="whenFinished" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="whenStart" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="whenFinished" optional="YES" attributeType="String"/>
+        <attribute name="whenStart" optional="YES" attributeType="String"/>
         <relationship name="person" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Person" inverseName="education" inverseEntity="Person"/>
     </entity>
     <entity name="Person" representedClassName="Person" syncable="YES" codeGenerationType="class">

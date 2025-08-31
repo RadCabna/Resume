@@ -76,7 +76,24 @@ class SurveyManager: ObservableObject {
         formData.address = draft.address ?? ""
         formData.adress_1 = draft.adress_1 ?? ""
         
-//        adress_1
+        // Загружаем образование
+        loadEducationsFromDraft(draft)
+    }
+    
+    // Загружаем образования из CoreData в formData (оперативную память)
+    private func loadEducationsFromDraft(_ draft: Person) {
+        let request: NSFetchRequest<Education> = Education.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        request.sortDescriptors = [NSSortDescriptor(key: "whenStart", ascending: false)]
+        
+        do {
+            let educations = try viewContext.fetch(request)
+            formData.educations = educations.map { EducationData(from: $0) }
+            print("📚 Загружено образований: \(educations.count)")
+        } catch {
+            print("❌ Ошибка загрузки образований: \(error)")
+            formData.educations = []
+        }
     }
     
     // Сохраняем данные из formData в черновик CoreData
@@ -93,6 +110,9 @@ class SurveyManager: ObservableObject {
         draft.adress_1 = formData.adress_1
         draft.lastModified = Date()
         
+        // Сохраняем образования в CoreData
+        saveEducationsToDraft(draft)
+        
         // Сохраняем в базу данных
         do {
             try viewContext.save()
@@ -102,10 +122,59 @@ class SurveyManager: ObservableObject {
         }
     }
     
+    // Сохраняем образования из formData в CoreData
+    private func saveEducationsToDraft(_ draft: Person) {
+        // 1. Удаляем старые записи образования
+        deleteExistingEducations(for: draft)
+        
+        // 2. Создаем новые записи образования
+        createNewEducations(for: draft)
+    }
+    
+    // Удаляем существующие образования для Person
+    private func deleteExistingEducations(for person: Person) {
+        let request: NSFetchRequest<Education> = Education.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", person)
+        
+        do {
+            let existingEducations = try viewContext.fetch(request)
+            for education in existingEducations {
+                viewContext.delete(education)
+            }
+            print("🗑️ Удалено старых образований: \(existingEducations.count)")
+        } catch {
+            print("❌ Ошибка удаления старых образований: \(error)")
+        }
+    }
+    
+    // Создаем новые образования для Person
+    private func createNewEducations(for person: Person) {
+        for educationData in formData.educations {
+            let education = Education(context: viewContext)
+            education.isCurrentlyStudying = educationData.isCurrentlyStudying
+            education.schoolName = educationData.schoolName
+            education.whenFinished = educationData.isCurrentlyStudying ? nil : educationData.whenFinished
+            education.whenStart = educationData.whenStart
+            education.person = person  // Устанавливаем связь
+        }
+        print("📚 Создано новых образований: \(formData.educations.count)")
+    }
+    
     // MARK: - Навигация между экранами
     
     // Переход на следующий экран
     func nextStep() {
+        print("🔄 nextStep() вызван. Текущий stepNumber: \(stepNumber)")
+        print("📝 formData.name: '\(formData.name)', formData.surname: '\(formData.surname)', formData.email: '\(formData.email)'")
+        print("📚 formData.educations.count: \(formData.educations.count)")
+        print("✅ isCurrentStepValid(): \(isCurrentStepValid())")
+        
+        // Проверяем валидность текущего экрана
+//        guard isCurrentStepValid() else {
+//            print("❌ Текущий экран не заполнен корректно")
+//            return
+//        }
+        
         saveDraft()
 
         if stepNumber < 7 {
@@ -166,6 +235,10 @@ class SurveyManager: ObservableObject {
         case 1: // Contacts экран - email обязателен
             return !formData.email.trimmingCharacters(in: .whitespaces).isEmpty
             
+        case 2: // Education экран - хотя бы одно образование с валидными данными
+            return !formData.educations.isEmpty && 
+                   formData.educations.allSatisfy { $0.isValid }
+            
         default:
             return true // Остальные экраны пока не проверяем
         }
@@ -184,6 +257,33 @@ class SurveyFormData: ObservableObject {
     @Published var website = ""
     @Published var address = ""
     @Published var adress_1 = ""
+    
+    // Образование
+    @Published var educations: [EducationData] = []
+}
+
+// MARK: - EducationData класс для временного хранения образования
+class EducationData: ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var isCurrentlyStudying = false
+    @Published var schoolName = ""
+    @Published var whenFinished = ""
+    @Published var whenStart = ""
+    
+    init() {}
+    
+    // Конструктор из CoreData объекта Education
+    init(from education: Education) {
+        self.isCurrentlyStudying = education.isCurrentlyStudying
+        self.schoolName = education.schoolName ?? ""
+        self.whenFinished = education.whenFinished ?? ""
+        self.whenStart = education.whenStart ?? ""
+    }
+    
+    // Валидация данных
+    var isValid: Bool {
+        return !schoolName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 }
 
 
