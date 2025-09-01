@@ -13,7 +13,9 @@ struct ResumeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainView()
+            let testFormData = SurveyFormData()
+            PDFPreviewView(formData: testFormData)
+            
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

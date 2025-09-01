@@ -21,5 +21,15 @@
         <attribute name="surname" optional="YES" attributeType="String"/>
         <attribute name="website" optional="YES" attributeType="String"/>
         <relationship name="education" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Education" inverseName="person" inverseEntity="Education"/>
+        <relationship name="work" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Work" inverseName="person" inverseEntity="Work"/>
+    </entity>
+    <entity name="Work" representedClassName="Work" syncable="YES" codeGenerationType="class">
+        <attribute name="companiLocation" optional="YES" attributeType="String"/>
+        <attribute name="companyName" optional="YES" attributeType="String"/>
+        <attribute name="isCurentlyWork" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="workAt" optional="YES" attributeType="String"/>
+        <attribute name="workTo" optional="YES" attributeType="String"/>
+        <attribute name="yourPosition" optional="YES" attributeType="String"/>
+        <relationship name="person" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Person" inverseName="work" inverseEntity="Person"/>
     </entity>
 </model>

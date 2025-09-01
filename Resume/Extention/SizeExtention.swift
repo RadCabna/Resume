@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 extension View {
     
@@ -17,6 +18,33 @@ extension View {
             return false
         }
         return window.safeAreaInsets.top > 20
+    }
+}
+
+// MARK: - Простое отслеживание клавиатуры
+class KeyboardObserver: ObservableObject {
+    @Published var isKeyboardVisible = false
+    
+    init() {
+        NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillShowNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            DispatchQueue.main.async {
+                self.isKeyboardVisible = true
+            }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillHideNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            DispatchQueue.main.async {
+                self.isKeyboardVisible = false
+            }
+        }
     }
 }
 

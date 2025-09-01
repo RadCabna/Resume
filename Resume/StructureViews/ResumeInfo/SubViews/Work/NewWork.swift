@@ -1,37 +1,35 @@
 //
-//  NewEducation.swift
+//  NewWork.swift
 //  Resume
 //
-//  Created by Алкександр Степанов on 31.08.2025.
+//  Created by Алкександр Степанов on 01.09.2025.
 //
 
 import SwiftUI
 
-struct NewEducation: View {
-    @State private var stepNumber = 2
+struct NewWork: View {
+    @State private var stepNumber = 3
     @State private var stepsTextArray = Arrays.stepsTextArray
     @ObservedObject var formData: SurveyFormData
     
-    // Привязки к переменным из MainView через EducationView
-    @Binding var schoolName: String
-    @Binding var whenStart: String
-    @Binding var whenFinished: String
-    @Binding var isCurrentlyStudying: Bool
-    @Binding var editingEducationIndex: Int?
-    
-    // Отслеживание клавиатуры
     @StateObject private var keyboardObserver = KeyboardObserver()
     
-    func saveEducationData() {
-        // Создаем новое образование из локальных данных
-        let newEducation = EducationData()
-        newEducation.schoolName = schoolName
-        newEducation.whenStart = whenStart
-        newEducation.whenFinished = isCurrentlyStudying ? "Present" : whenFinished
-        newEducation.isCurrentlyStudying = isCurrentlyStudying
-        
-        // Добавляем в массив
-        formData.educations.append(newEducation)
+    @Binding var companyName: String
+    @Binding var position: String
+    @Binding var whenStart: String
+    @Binding var whenFinished: String
+    @Binding var companiLocation: String
+    @Binding var isCurentlyWork: Bool
+    @Binding var editingWorkIndex: Int?
+    
+    func saveWorkData() {
+        let newWork = WorkData()
+        newWork.companyName = companyName
+        newWork.position = position
+        newWork.whenStart = whenStart
+        newWork.whenFinished = whenFinished
+        newWork.companiLocation = companiLocation
+        formData.works.append(newWork)
     }
     
     var body: some View {
@@ -45,7 +43,7 @@ struct NewEducation: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: screenWidth*0.9)
-                        TextField("Stanford University", text: $schoolName)
+                        TextField("Example Co.", text: $companyName)
                             .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
                             .foregroundStyle(Color.black)
                             .padding(.horizontal, screenWidth*0.1)
@@ -53,7 +51,39 @@ struct NewEducation: View {
                             .autocapitalization(.words)
                             .disableAutocorrection(false)
                     }
-                    Text("When did you start?")
+                    Text(stepsTextArray[stepNumber][1])
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
+                        .foregroundStyle(Color.black)
+                    ZStack {
+                        Image(.textFieldFrame)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: screenWidth*0.9)
+                        TextField("Astoria, NY", text: $companiLocation)
+                            .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
+                            .foregroundStyle(Color.black)
+                            .padding(.horizontal, screenWidth*0.1)
+                            .keyboardType(.numbersAndPunctuation)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+                    Text(stepsTextArray[stepNumber][2])
+                        .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
+                        .foregroundStyle(Color.black)
+                    ZStack {
+                        Image(.textFieldFrame)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: screenWidth*0.9)
+                        TextField("Manager", text: $position)
+                            .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
+                            .foregroundStyle(Color.black)
+                            .padding(.horizontal, screenWidth*0.1)
+                            .keyboardType(.numbersAndPunctuation)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+                    Text(stepsTextArray[stepNumber][3])
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                         .foregroundStyle(Color.black)
                     ZStack {
@@ -69,14 +99,14 @@ struct NewEducation: View {
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                     }
-                    Text(stepsTextArray[stepNumber][2])
+                    Text(stepsTextArray[stepNumber][4])
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.014))
                         .foregroundStyle(Color.onboardingColor2)
                         .padding(.bottom)
-                    Text("When did you finish?")
+                    Text(stepsTextArray[stepNumber][5])
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                         .foregroundStyle(Color.black)
-                    if !isCurrentlyStudying {
+                    if !isCurentlyWork {
                         ZStack {
                             Image(.textFieldFrame)
                                 .resizable()
@@ -104,19 +134,19 @@ struct NewEducation: View {
                         }
                         .frame(minHeight: screenHeight*0.03)
                     }
-                    Text(stepsTextArray[stepNumber][4])
+                    Text(stepsTextArray[stepNumber][6])
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.014))
                         .foregroundStyle(Color.onboardingColor2)
                         .padding(.bottom)
                     HStack {
-                        Toggle("", isOn: $isCurrentlyStudying)
+                        Toggle("", isOn: $isCurentlyWork)
                             .toggleStyle(CustomToggle())
                         Text("Present")
                             .font(Font.custom("Figtree-Regular", size: screenHeight*0.02))
                             .foregroundStyle(Color.black)
                     }
                     .padding(.bottom)
-                    Text(stepsTextArray[stepNumber][5])
+                    Text(stepsTextArray[stepNumber][7])
                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.014))
                         .foregroundStyle(Color.onboardingColor2)
                         .padding(.bottom)
@@ -132,12 +162,17 @@ struct NewEducation: View {
         }
         .onAppear {
             // Загружаем данные при редактировании
-            if let editIndex = editingEducationIndex, editIndex < formData.educations.count {
-                let education = formData.educations[editIndex]
-                schoolName = education.schoolName
-                whenStart = education.whenStart
-                whenFinished = education.whenFinished
-                isCurrentlyStudying = education.isCurrentlyStudying
+            if let editIndex = editingWorkIndex, editIndex < formData.works.count {
+                let work = formData.works[editIndex]
+                companyName = work.companyName
+                position = work.position
+                whenStart = work.whenStart
+                whenFinished = work.whenFinished
+                companiLocation = work.companiLocation
+                isCurentlyWork = work.isCurentlyWork
+                print("🔄 NewWork: загружены данные для редактирования - \(work.companyName)")
+            } else {
+                print("🆕 NewWork: режим создания новой работы")
             }
         }
     }
@@ -146,35 +181,16 @@ struct NewEducation: View {
 #Preview {
     let testFormData = SurveyFormData()
     // Оставляем массив пустым для тестирования NewEducation
-    return NewEducation(
+    return NewWork(
         formData: testFormData,
-        schoolName: .constant(""),
+        companyName: .constant(""),
+        position: .constant(""),
         whenStart: .constant(""),
         whenFinished: .constant(""),
-        isCurrentlyStudying: .constant(false),
-        editingEducationIndex: .constant(nil)
+        companiLocation: .constant(""),
+        isCurentlyWork: .constant(false),
+        editingWorkIndex: .constant(nil)
     )
 }
 
-struct CustomToggle: ToggleStyle {
-    var screenHeight = UIScreen.main.bounds.height
-    var screenWidth = UIScreen.main.bounds.width
-    
-    func makeBody(configuration: Configuration) -> some View {
-        ZStack {
-            Image(configuration.isOn ? "toggleBackOn" : "toggleBackOff")
-                .resizable()
-                .scaledToFit()
-                .frame(height: screenHeight * 0.04)
-            Image(configuration.isOn ? "toggleOn" : "toggleOff")
-                .resizable()
-                .scaledToFit()
-                .frame(height: screenHeight*0.024)
-                .offset(x: configuration.isOn ? screenHeight * 0.018 : -screenHeight * 0.018)
-                .animation(.easeInOut(duration: 0.2), value: configuration.isOn)
-        }
-        .onTapGesture {
-            configuration.isOn.toggle()
-        }
-    }
-}
+

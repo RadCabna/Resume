@@ -1,59 +1,55 @@
 //
-//  EducationList.swift
+//  WorkList.swift
 //  Resume
 //
-//  Created by Алкександр Степанов on 31.08.2025.
+//  Created by Алкександр Степанов on 01.09.2025.
 //
 
 import SwiftUI
 
-struct EducationList: View {
-    @State private var stepNumber = 2
-    @State private var stepsTextArray = Arrays.stepsTextArray
+struct WorkList: View {
     @ObservedObject var formData: SurveyFormData
+    @Binding var showingNewWork: Bool
+    @Binding var justSavedWork: Bool
+    @Binding var editingWorkIndex: Int?
     
-    // Прямое управление состоянием подэкрана
-    @Binding var showingNewEducation: Bool
-    @Binding var justSavedEducation: Bool
-    @Binding var editingEducationIndex: Int?
-    
-    private func addNewEducation() {
-        editingEducationIndex = nil // Режим добавления нового
-        showingNewEducation = true // Переходим к NewEducation
-        justSavedEducation = false // Сбрасываем флаг
+    private func addNewWork() {
+        editingWorkIndex = nil
+        showingNewWork = true
+        justSavedWork = false
     }
     
-    private func editEducation(at index: Int) {
-        editingEducationIndex = index // Устанавливаем индекс для редактирования
-        showingNewEducation = true // Переходим к NewEducation
-        justSavedEducation = false // Сбрасываем флаг
+    private func editWork(at index: Int) {
+        editingWorkIndex = index
+        showingNewWork = true
+        justSavedWork = false
     }
     
-    private func deleteEducation(at index: Int) {
-        formData.educations.remove(at: index)
+    private func deleteWork(at index: Int) {
+        formData.works.remove(at: index)
     }
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading) {
-                Text("Education History")
+                Text("Employment History")
                     .font(Font.custom("Figtree-Bold", size: screenHeight*0.03))
                     .foregroundStyle(Color.black)
                     .lineSpacing(0)
-                ForEach(Array(formData.educations.enumerated()), id: \.element.id) { index, education in
-                    Image(.educationFrame)
+                ForEach(Array(formData.works.enumerated()), id: \.element.id) { index, work in
+                    Image(.employmentFrame)
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenWidth*0.9)
                         .overlay(
                             VStack(alignment: .leading, spacing: screenHeight*0.015) {
-                                Text(formData.educations[index].schoolName)
+                                Text(formData.works[index].companyName)
                                     .font(Font.custom("Figtree-Medium", size: screenHeight*0.025))
                                     .foregroundStyle(Color.onboardingColor2)
                                 HStack {
-                                    Text(formData.educations[index].whenStart)
+                                    Text(formData.works[index].whenStart)
                                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.02))
                                         .foregroundStyle(Color.onboardingColor2)
-                                    Text("- \(formData.educations[index].isCurrentlyStudying ? "Present" : formData.educations[index].whenFinished)")
+                                    Text("- \(formData.works[index].isCurentlyWork ? "Present" : formData.works[index].whenFinished)")
                                         .font(Font.custom("Figtree-Medium", size: screenHeight*0.02))
                                         .foregroundStyle(Color.onboardingColor2)
                                 }
@@ -63,14 +59,14 @@ struct EducationList: View {
                                         .scaledToFit()
                                         .frame(height: screenHeight*0.025)
                                         .onTapGesture {
-                                            editEducation(at: index)
+                                            editWork(at: index)
                                         }
                                     Image(.deleteButton)
                                         .resizable()
                                         .scaledToFit()
                                         .frame(height: screenHeight*0.025)
                                         .onTapGesture {
-                                            deleteEducation(at: index)
+                                            deleteWork(at: index)
                                         }
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -79,7 +75,7 @@ struct EducationList: View {
                         )
                 }
                 Spacer()
-                Button(action: addNewEducation) {
+                Button(action: addNewWork) {
                     Text("+ Add Another Institution")
                         .font(Font.custom("Figtree-Bold", size: screenHeight*0.025))
                         .foregroundStyle(Color.onboardingColor1)
@@ -98,28 +94,10 @@ struct EducationList: View {
 
 #Preview {
     let testFormData = SurveyFormData()
-       
-       // Создаем первое образование с данными
-       let education1 = EducationData()
-       education1.schoolName = "Stanford University"
-       education1.whenStart = "09/2018"
-       education1.whenFinished = "06/2022"
-       education1.isCurrentlyStudying = false
-       
-       // Создаем второе образование (текущее)
-       let education2 = EducationData()
-       education2.schoolName = "MIT"
-       education2.whenStart = "09/2022"
-       education2.whenFinished = "Present"
-       education2.isCurrentlyStudying = true
-    
-    let education3 = EducationData()
-    education3.schoolName = "MIT"
-    education3.whenStart = "09/2022"
-    education3.whenFinished = "present"
-    education3.isCurrentlyStudying = true
-       
-       // Добавляем в массив
-       testFormData.educations = [education1, education2, education3, education2]
-       
-       return EducationList(formData: testFormData, showingNewEducation: .constant(false), justSavedEducation: .constant(false), editingEducationIndex: .constant(nil))}
+    let work = WorkData()
+    work.companyName = "Company"
+    work.whenStart = "10/2010"
+    work.whenFinished = "10/2013"
+    testFormData.works = [work, work]
+    return WorkList(formData: testFormData, showingNewWork: .constant(false), justSavedWork: .constant(false), editingWorkIndex: .constant(nil))
+}

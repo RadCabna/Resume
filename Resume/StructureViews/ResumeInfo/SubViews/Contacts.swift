@@ -19,6 +19,9 @@ struct Contacts: View {
     @State private var address = ""
     @State private var address_1 = ""
     
+    // Отслеживание клавиатуры
+    @StateObject private var keyboardObserver = KeyboardObserver()
+    
     func saveContactData() {
         formData.email = email
         formData.phone = phone
@@ -110,7 +113,8 @@ struct Contacts: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .frame(maxWidth: screenWidth*0.9)
             .padding(.top, screenHeight*0.25)
-            .padding(.bottom, screenHeight*0.15)
+            .padding(.bottom, keyboardObserver.isKeyboardVisible ? screenHeight*0.4 : screenHeight*0.15)
+            .animation(.easeInOut(duration: 0.3), value: keyboardObserver.isKeyboardVisible)
             .onAppear {
                 // Загружаем данные из formData в локальные переменные
                 email = formData.email

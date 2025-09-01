@@ -16,6 +16,9 @@ struct Intro: View {
     @State private var name = ""
     @State private var surname = ""
     
+    // Отслеживание клавиатуры
+    @StateObject private var keyboardObserver = KeyboardObserver()
+    
     func saveIntroData() {
         formData.name = name
         formData.surname = surname
@@ -59,6 +62,8 @@ struct Intro: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .frame(maxWidth: screenWidth*0.9)
         .padding(.top, screenHeight*0.25)
+//        .padding(.bottom, keyboardObserver.isKeyboardVisible ? screenHeight*0.3 : 0)
+        .animation(.easeInOut(duration: 0.3), value: keyboardObserver.isKeyboardVisible)
         .onAppear {
             // Загружаем данные из formData в локальные переменные
             name = formData.name

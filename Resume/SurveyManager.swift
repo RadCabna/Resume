@@ -78,6 +78,9 @@ class SurveyManager: ObservableObject {
         
         // Загружаем образование
         loadEducationsFromDraft(draft)
+        
+        // Загружаем опыт работы
+        loadWorksFromDraft(draft)
     }
     
     // Загружаем образования из CoreData в formData (оперативную память)
@@ -93,6 +96,22 @@ class SurveyManager: ObservableObject {
         } catch {
             print("❌ Ошибка загрузки образований: \(error)")
             formData.educations = []
+        }
+    }
+    
+    // Загружаем опыт работы из CoreData в formData (оперативную память)
+    private func loadWorksFromDraft(_ draft: Person) {
+        let request: NSFetchRequest<Work> = Work.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        request.sortDescriptors = [NSSortDescriptor(key: "workAt", ascending: false)]
+        
+        do {
+            let works = try viewContext.fetch(request)
+            formData.works = works.map { WorkData(from: $0) }
+            print("💼 Загружено работ: \(works.count)")
+        } catch {
+            print("❌ Ошибка загрузки работ: \(error)")
+            formData.works = []
         }
     }
     
@@ -112,6 +131,9 @@ class SurveyManager: ObservableObject {
         
         // Сохраняем образования в CoreData
         saveEducationsToDraft(draft)
+        
+        // Сохраняем опыт работы в CoreData
+        saveWorksToDraft(draft)
         
         // Сохраняем в базу данных
         do {
@@ -158,6 +180,48 @@ class SurveyManager: ObservableObject {
             education.person = person  // Устанавливаем связь
         }
         print("📚 Создано новых образований: \(formData.educations.count)")
+    }
+    
+    // MARK: - Методы для работы с опытом работы
+    
+    // Сохраняем опыт работы в черновик
+    private func saveWorksToDraft(_ draft: Person) {
+        // 1. Удаляем старые записи о работе
+        deleteExistingWorks(for: draft)
+        
+        // 2. Создаем новые записи о работе
+        createNewWorks(for: draft)
+    }
+    
+    // Удаляем существующие записи о работе для Person
+    private func deleteExistingWorks(for person: Person) {
+        let request: NSFetchRequest<Work> = Work.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", person)
+        
+        do {
+            let existingWorks = try viewContext.fetch(request)
+            for work in existingWorks {
+                viewContext.delete(work)
+            }
+            print("🗑️ Удалено старых работ: \(existingWorks.count)")
+        } catch {
+            print("❌ Ошибка удаления старых работ: \(error)")
+        }
+    }
+    
+    // Создаем новые записи о работе для Person
+    private func createNewWorks(for person: Person) {
+        for workData in formData.works {
+            let work = Work(context: viewContext)
+            work.isCurentlyWork = workData.isCurentlyWork
+            work.companyName = workData.companyName
+            work.yourPosition = workData.position
+            work.workAt = workData.whenStart
+            work.workTo = workData.isCurentlyWork ? nil : workData.whenFinished
+            work.companiLocation = workData.companiLocation
+            work.person = person  // Устанавливаем связь
+        }
+        print("💼 Создано новых работ: \(formData.works.count)")
     }
     
     // MARK: - Навигация между экранами
@@ -239,6 +303,10 @@ class SurveyManager: ObservableObject {
             return !formData.educations.isEmpty && 
                    formData.educations.allSatisfy { $0.isValid }
             
+        case 3: // Work экран - хотя бы одна работа с валидными данными
+            return !formData.works.isEmpty && 
+                   formData.works.allSatisfy { $0.isValid }
+            
         default:
             return true // Остальные экраны пока не проверяем
         }
@@ -260,6 +328,9 @@ class SurveyFormData: ObservableObject {
     
     // Образование
     @Published var educations: [EducationData] = []
+    
+    // Опыт работы
+    @Published var works: [WorkData] = []
 }
 
 // MARK: - EducationData класс для временного хранения образования
@@ -283,6 +354,33 @@ class EducationData: ObservableObject, Identifiable {
     // Валидация данных
     var isValid: Bool {
         return !schoolName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+}
+
+class WorkData : ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var companyName = ""
+    @Published var position = ""
+    @Published var whenStart = ""
+    @Published var whenFinished = ""
+    @Published var companiLocation = ""
+    @Published var isCurentlyWork = false
+    
+    init() {}
+    
+    init(from work: Work) {
+        self.isCurentlyWork = work.isCurentlyWork
+        self.companyName = work.companyName ?? ""
+        self.position = work.yourPosition ?? ""
+        self.whenStart = work.workAt ?? ""
+        self.whenFinished = work.workTo ?? ""
+        self.companiLocation = work.companiLocation ?? ""
+    }
+    
+    // Валидация данных
+    var isValid: Bool {
+        return !companyName.trimmingCharacters(in: .whitespaces).isEmpty &&
+               !position.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
 

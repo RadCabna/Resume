@@ -20,6 +20,8 @@ struct EducationView: View {
     
     // Состояние подэкрана из MainView
     @Binding var showingNewEducation: Bool
+    @Binding var justSavedEducation: Bool
+    @Binding var editingEducationIndex: Int?
     
     var body: some View {
         ZStack {
@@ -29,12 +31,15 @@ struct EducationView: View {
                     schoolName: $schoolName,
                     whenStart: $whenStart,
                     whenFinished: $whenFinished,
-                    isCurrentlyStudying: $isCurrentlyStudying
+                    isCurrentlyStudying: $isCurrentlyStudying,
+                    editingEducationIndex: $editingEducationIndex
                 )
             } else {
                 EducationList(
                     formData: formData,
-                    showingNewEducation: $showingNewEducation
+                    showingNewEducation: $showingNewEducation,
+                    justSavedEducation: $justSavedEducation,
+                    editingEducationIndex: $editingEducationIndex
                 )
             }
         }
@@ -60,7 +65,9 @@ struct EducationView: View {
         whenStart: .constant(""),
         whenFinished: .constant(""),
         isCurrentlyStudying: .constant(false),
-        showingNewEducation: .constant(true)
+        showingNewEducation: .constant(true),
+        justSavedEducation: .constant(false),
+        editingEducationIndex: .constant(nil)
     )
 }
 

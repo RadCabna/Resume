@@ -34,7 +34,7 @@ class Arrays {
         StepMenu(stepNumber: 8, title: "Finish", iconName: "finishIcon", iconOff: "sideIconOff_8")
     ]
     
-    static var stepsTextArray = [stepsTextScreen_1, stepsTextScreen_2, stepsTextScreen_3]
+    static var stepsTextArray = [stepsTextScreen_1, stepsTextScreen_2, stepsTextScreen_3, stepsTextScreen_4]
     
     static var stepsTextScreen_1 = [
         "Hello!",
@@ -61,5 +61,15 @@ class Arrays {
         "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional."
     ]
     
+    static var stepsTextScreen_4 = [
+        "Company or organization name",
+        "Company Location",
+        "Your Position",
+        "I worked at this position from:",
+        "e.g. 09/2017 or Sep 2017",
+        "To:",
+        "Still working? Just enter the start date and click\n“Present”.",
+        "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional."
+]
     
 }
