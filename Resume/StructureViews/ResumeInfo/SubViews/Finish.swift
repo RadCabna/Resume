@@ -6,12 +6,18 @@
 //
 
 import SwiftUI
+import PDFKit
 
 struct Finish: View {
     @ObservedObject var formData: SurveyFormData
-    @State private var stepNumber = 1
+    @State private var stepNumber = 7  // Finish screen (8-й шаг, индекс 7)
     @State private var stepsTextArray = Arrays.stepsTextArray
     @StateObject private var keyboardObserver = KeyboardObserver()
+    
+    // MARK: - PDF Management
+    @StateObject private var pdfGenerator = PDF_1_Generator()
+    @State private var pdfThumbnailImage: UIImage?
+    @State private var showingPDFView = false
     
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -63,12 +69,22 @@ struct Finish: View {
                         }
                             .padding()
                     )
+                
+                // MARK: - PDF Thumbnail Section
+                PDFThumbnailView()
+                    .padding(.top, screenHeight*0.03)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
 //            .frame(maxWidth: screenWidth*0.9)
             .padding(.top, screenHeight*0.2)
             .padding(.bottom, keyboardObserver.isKeyboardVisible ? screenHeight*0.4 : screenHeight*0.15)
             .animation(.easeInOut(duration: 0.3), value: keyboardObserver.isKeyboardVisible)
+        }
+        .sheet(isPresented: $showingPDFView) {
+            PDFPreviewView(formData: formData)
+        }
+        .onAppear {
+            generatePDFThumbnail()
         }
     }
     
@@ -281,5 +297,106 @@ struct Finish: View {
     testFormData.works.append(work)
     
     return Finish(formData: testFormData)
+}
+
+// MARK: - PDF Thumbnail Extension
+extension Finish {
+    
+    /**
+     * Генерирует миниатюру PDF документа
+     */
+    private func generatePDFThumbnail() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let pdfData = pdfGenerator.generatePDF(formData: formData, userPhoto: nil),
+                  let pdfDocument = PDFDocument(data: pdfData),
+                  let firstPage = pdfDocument.page(at: 0) else {
+                print("❌ Не удалось создать PDF или получить первую страницу")
+                return
+            }
+            
+            // Создаем миниатюру с нужным размером
+            let thumbnailSize = CGSize(width: 200, height: 283) // Соотношение A4
+            let thumbnail = firstPage.thumbnail(of: thumbnailSize, for: .mediaBox)
+            
+            DispatchQueue.main.async {
+                self.pdfThumbnailImage = thumbnail
+                print("✅ PDF миниатюра создана успешно")
+            }
+        }
+    }
+    
+    /**
+     * Компонент для отображения миниатюры PDF
+     */
+    @ViewBuilder
+    private func PDFThumbnailView() -> some View {
+        VStack(alignment: .leading, spacing: screenHeight*0.015) {
+            Text("Your Resume")
+                .font(Font.custom("Figtree-Bold", size: screenHeight*0.025))
+                .foregroundStyle(Color.black)
+            
+            Button(action: {
+                showingPDFView = true
+                print("📄 Открываем полный просмотр PDF")
+            }) {
+                ZStack {
+                    // Фон для миниатюры
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color.white)
+                        .frame(width: screenWidth*0.5, height: screenWidth*0.7) // A4 пропорции
+                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                    
+                    if let thumbnail = pdfThumbnailImage {
+                        // Отображаем реальную миниатюру PDF
+                        Image(uiImage: thumbnail)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: screenWidth*0.5, height: screenWidth*0.7)
+                            .clipShape(RoundedRectangle(cornerRadius: 15))
+                    } else {
+                        // Placeholder пока миниатюра загружается
+                        VStack(spacing: 10) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            
+                            Text("Generating Preview...")
+                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                .foregroundStyle(Color.gray)
+                        }
+                    }
+                    
+                    // Overlay с иконкой просмотра
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "eye.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .background(
+                                    Circle()
+                                        .fill(Color.blue.opacity(0.8))
+                                        .frame(width: 35, height: 35)
+                                )
+                                .padding(10)
+                        }
+                        Spacer()
+                    }
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Описание
+            HStack {
+                Image(systemName: "doc.text")
+                    .foregroundColor(.blue)
+                Text("Tap to view full PDF")
+                    .font(Font.custom("Figtree-Regular", size: screenHeight*0.018))
+                    .foregroundStyle(Color.gray)
+            }
+            .padding(.top, screenHeight*0.01)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, screenWidth*0.05)
+    }
 }
 

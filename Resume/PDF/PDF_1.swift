@@ -29,9 +29,10 @@ class PDF_1_Generator: ObservableObject {
         static let nameFont = UIFont(name: "Figtree-ExtraBold", size: 150) ?? UIFont.boldSystemFont(ofSize: 28)
         static let surnameFont = UIFont(name: "Figtree-ExtraBold", size: 150) ?? UIFont.boldSystemFont(ofSize: 28)
         static let positionFont = UIFont(name: "Figtree-Medium", size: 80) ?? UIFont.systemFont(ofSize: 16)
-        static let sectionTitleFont = UIFont(name: "Figtree-Medium", size: 18) ?? UIFont.systemFont(ofSize: 18, weight: .medium)
-        static let contentFont = UIFont(name: "Figtree-Regular", size: 12) ?? UIFont.systemFont(ofSize: 12)
-        static let smallFont = UIFont(name: "Figtree-Regular", size: 10) ?? UIFont.systemFont(ofSize: 10)
+        static let sectionTitleFont = UIFont(name: "Figtree-Bold", size: 90) ?? UIFont.systemFont(ofSize: 18, weight: .medium)
+        static let contentFont = UIFont(name: "Figtree-Regular", size: 60) ?? UIFont.systemFont(ofSize: 12)
+        static let smallFont = UIFont(name: "Figtree-Regular", size: 60) ?? UIFont.systemFont(ofSize: 10)
+        static let infoFont = UIFont(name: "Figtree-Medium", size: 40) ?? UIFont.systemFont(ofSize: 10)
     }
     
     // MARK: - Color Configuration
@@ -39,10 +40,11 @@ class PDF_1_Generator: ObservableObject {
     private struct ColorConfig {
         static let nameColor = UIColor.blue
         static let surnameColor = UIColor.blue
-        static let positionColor = UIColor.onboardingColor2 // Светло-голубой
-        static let sectionTitleColor = UIColor.white
+        static let positionColor = UIColor.onboardingColor2
+        static let sectionTitleColor = UIColor.black
         static let contentColor = UIColor.black
         static let contactColor = UIColor.white
+        static let periodColor = UIColor.pdFpediod
     }
     
     // MARK: - Layout Configuration
@@ -249,7 +251,7 @@ class PDF_1_Generator: ObservableObject {
      */
     private func drawPersonalInfo(formData: SurveyFormData, in context: CGContext) {
         // Позиция второго прямоугольника (правый верхний)
-        let rect2 = CGRect(x: rectangleCoordinates[1].0, y: 0, width: rectangleWidth, height: rectangleHeight)
+        let rect2 = CGRect(x: rectangleCoordinates[1].0, y: rectangleCoordinates[1].1, width: rectangleWidth, height: rectangleHeight)
         
         // Начальная позиция для текста с отступами
         var currentY = rect2.minY + LayoutConfig.nameTopMargin
@@ -265,17 +267,6 @@ class PDF_1_Generator: ObservableObject {
         currentY += nameString.size().height + LayoutConfig.smallSpacing
         print("👤 Имя '\(formData.name)' отрисовано в позиции (\(textX), \(currentY - nameString.size().height)) шрифтом \(FontConfig.nameFont.fontName) размером \(FontConfig.nameFont.pointSize)")
         
-        // Рисуем фамилию
-//        let surnameAttributes: [NSAttributedString.Key: Any] = [
-//            .font: FontConfig.surnameFont,
-//            .foregroundColor: ColorConfig.surnameColor
-//        ]
-//        let surnameString = NSAttributedString(string: formData.surname.uppercased(), attributes: surnameAttributes)
-//        surnameString.draw(at: CGPoint(x: textX, y: currentY))
-//        currentY += surnameString.size().height + LayoutConfig.mediumSpacing
-//        print("👤 Фамилия '\(formData.surname)' отрисована в позиции (\(textX), \(currentY - surnameString.size().height)) шрифтом \(FontConfig.surnameFont.fontName) размером \(FontConfig.surnameFont.pointSize)")
-        
-        // Рисуем должность (берем из первой работы, если есть)
         if !formData.works.isEmpty {
             let position = formData.works[0].position
             let positionAttributes: [NSAttributedString.Key: Any] = [
@@ -288,6 +279,15 @@ class PDF_1_Generator: ObservableObject {
         }
     }
     
+    private func drawEducationInfo(formData: SurveyFormData, in context: CGContext) {
+        
+        let rect = CGRect(x: rectangleCoordinates[3].0, y: rectangleCoordinates[3].1, width: rectangleWidth, height: rectangleHeight)
+        
+        // Начальная позиция для текста с отступами
+        var currentY = rect.minY + LayoutConfig.nameTopMargin
+        let textX = rect.minX + LayoutConfig.nameLeftMargin
+    }
+    
     // MARK: - Contact Info Drawing
     /**
      * Рисует контактную информацию в третьем прямоугольнике
@@ -295,80 +295,105 @@ class PDF_1_Generator: ObservableObject {
      */
     private func drawContactInfo(formData: SurveyFormData, in context: CGContext) {
         // Позиция третьего прямоугольника (левый средний)
-        let rect3 = CGRect(x: 0, y: rectangleHeight, width: rectangleWidth, height: rectangleHeight)
+        let rect3 = CGRect(x: rectangleCoordinates[4].0, y: rectangleCoordinates[4].1, width: rectangleWidth, height: rectangleHeight)
         
-        // Начальная позиция для контента
-        var currentY = rect3.minY + LayoutConfig.sectionTopMargin
-        let textX = rect3.minX + LayoutConfig.sectionLeftMargin
+        var currentY = rect3.minY + LayoutConfig.sectionTopMargin + 80
+        let textX = rect3.minX + LayoutConfig.sectionLeftMargin + 100
         
         // Заголовок секции
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.sectionTitleFont,
             .foregroundColor: ColorConfig.sectionTitleColor
         ]
-        let titleString = NSAttributedString(string: "Contacts", attributes: titleAttributes)
-        titleString.draw(at: CGPoint(x: textX, y: currentY))
-        currentY += titleString.size().height + LayoutConfig.largeSpacing
-        print("📞 Заголовок 'Contacts' отрисован в позиции (\(textX), \(currentY - titleString.size().height)) шрифтом \(FontConfig.sectionTitleFont.fontName) размером \(FontConfig.sectionTitleFont.pointSize)")
-        
+//
         // Контент - email, телефон и т.д.
         let contentX = textX + LayoutConfig.contentLeftIndent
         let contentAttributes: [NSAttributedString.Key: Any] = [
-            .font: FontConfig.contentFont,
+            .font: FontConfig.infoFont,
             .foregroundColor: ColorConfig.contactColor
         ]
         
+        // Адрес
+        if !formData.address.isEmpty {
+            // Рисуем иконку адреса
+            if let addressIcon = UIImage(named: "adressIcon") {
+                let iconSize: CGFloat = 40
+                let iconY = currentY + (FontConfig.contentFont.lineHeight - iconSize) / 2
+                let iconRect = CGRect(x: contentX - iconSize - 20, y: iconY, width: iconSize, height: iconSize)
+                addressIcon.draw(in: iconRect)
+                print("📍 Иконка adressIcon отрисована в позиции (\(contentX - iconSize - 20), \(iconY))")
+            }
+            
+            let addressString = NSAttributedString(string: "\(formData.address)", attributes: contentAttributes)
+            addressString.draw(at: CGPoint(x: contentX, y: currentY))
+            currentY += addressString.size().height + LayoutConfig.mediumSpacing + 30
+            print("📍 Адрес '\(formData.address)' отрисован в позиции (\(contentX), \(currentY))")
+        
         // Email
         if !formData.email.isEmpty {
-            let emailString = NSAttributedString(string: "📧 \(formData.email)", attributes: contentAttributes)
+            // Рисуем иконку email
+            if let mailIcon = UIImage(named: "mailIcon") {
+                let iconSize: CGFloat = 40
+                let iconY = currentY + (FontConfig.contentFont.lineHeight - iconSize) / 2
+                let iconRect = CGRect(x: contentX - iconSize - 20, y: iconY, width: iconSize, height: iconSize)
+                mailIcon.draw(in: iconRect)
+                print("📧 Иконка mailIcon отрисована в позиции (\(contentX - iconSize - 20), \(iconY))")
+            }
+            
+            let emailString = NSAttributedString(string: "\(formData.email)", attributes: contentAttributes)
             emailString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += emailString.size().height + LayoutConfig.mediumSpacing
+            currentY += emailString.size().height + LayoutConfig.mediumSpacing + 30
             print("📧 Email '\(formData.email)' отрисован в позиции (\(contentX), \(currentY - emailString.size().height))")
         }
         
         // Телефон
         if !formData.phone.isEmpty {
-            let phoneString = NSAttributedString(string: "📱 \(formData.phone)", attributes: contentAttributes)
+            // Рисуем иконку телефона
+            if let phoneIcon = UIImage(named: "phoneIcon") {
+                let iconSize: CGFloat = 40
+                let iconY = currentY + (FontConfig.contentFont.lineHeight - iconSize) / 2
+                let iconRect = CGRect(x: contentX - iconSize - 20, y: iconY, width: iconSize, height: iconSize)
+                phoneIcon.draw(in: iconRect)
+                print("📱 Иконка phoneIcon отрисована в позиции (\(contentX - iconSize - 20), \(iconY))")
+            }
+            
+            let phoneString = NSAttributedString(string: "\(formData.phone)", attributes: contentAttributes)
             phoneString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += phoneString.size().height + LayoutConfig.mediumSpacing
+            currentY += phoneString.size().height + LayoutConfig.mediumSpacing + 30
             print("📱 Телефон '\(formData.phone)' отрисован в позиции (\(contentX), \(currentY - phoneString.size().height))")
         }
         
         // Веб-сайт
         if !formData.website.isEmpty {
-            let websiteString = NSAttributedString(string: "🌐 \(formData.website)", attributes: contentAttributes)
+            let websiteString = NSAttributedString(string: "\(formData.website)", attributes: contentAttributes)
             websiteString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += websiteString.size().height + LayoutConfig.mediumSpacing
+            currentY += websiteString.size().height + LayoutConfig.mediumSpacing + 30
             print("🌐 Веб-сайт '\(formData.website)' отрисован в позиции (\(contentX), \(currentY - websiteString.size().height))")
         }
         
-        // Адрес
-        if !formData.address.isEmpty {
-            let addressString = NSAttributedString(string: "📍 \(formData.address)", attributes: contentAttributes)
-            addressString.draw(at: CGPoint(x: contentX, y: currentY))
-            print("📍 Адрес '\(formData.address)' отрисован в позиции (\(contentX), \(currentY))")
+       
         }
     }
     
     // MARK: - Education Drawing
     /**
      * Рисует информацию об образовании в четвертом прямоугольнике
-     * Каждое образование отображается отдельным блоком
+     * Каждое образование отображается отдельным блоком с кружками и соединительными линиями
      */
     private func drawEducation(formData: SurveyFormData, in context: CGContext) {
         // Позиция четвертого прямоугольника (правый средний)
-        let rect4 = CGRect(x: rectangleWidth, y: rectangleHeight, width: rectangleWidth, height: rectangleHeight)
+        let rect4 = CGRect(x: rectangleCoordinates[3].0, y: rectangleCoordinates[3].1, width: rectangleWidthArray[3], height: rectangleHeightArray[3])
         
-        // Начальная позиция для контента
-        var currentY = rect4.minY + LayoutConfig.sectionTopMargin
-        let textX = rect4.minX + LayoutConfig.sectionLeftMargin
+        // Начальная позиция для текста с отступами
+        var currentY = rect4.minY + LayoutConfig.nameTopMargin
+        let textX = rect4.minX + LayoutConfig.nameLeftMargin
         
         // Заголовок секции
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.sectionTitleFont,
             .foregroundColor: ColorConfig.sectionTitleColor
         ]
-        let titleString = NSAttributedString(string: "Education", attributes: titleAttributes)
+        let titleString = NSAttributedString(string: "Education".uppercased(), attributes: titleAttributes)
         titleString.draw(at: CGPoint(x: textX, y: currentY))
         currentY += titleString.size().height + LayoutConfig.largeSpacing
         print("🎓 Заголовок 'Education' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
@@ -381,25 +406,66 @@ class PDF_1_Generator: ObservableObject {
         ]
         let periodAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.smallFont,
-            .foregroundColor: ColorConfig.contentColor
+            .foregroundColor: ColorConfig.periodColor
         ]
+        
+        // Настройки для кружков и линий
+        let circleRadius: CGFloat = 30
+        let circleX = contentX - 60  // Позиция кружков левее текста
+        let lineWidth: CGFloat = 2
+        let lineColor = UIColor.white
+        let circleColor = UIColor.white
+        
+        // Массив для хранения Y-координат кружков (для соединительных линий)
+        var circleYPositions: [CGFloat] = []
         
         // Проходим по всем образованиям
         for (index, education) in formData.educations.enumerated() {
-            // Название учебного заведения
-            let schoolString = NSAttributedString(string: education.schoolName, attributes: schoolNameAttributes)
-            schoolString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += schoolString.size().height + LayoutConfig.smallSpacing
-            print("🏫 Образование #\(index + 1): '\(education.schoolName)' отрисовано в позиции (\(contentX), \(currentY - schoolString.size().height))")
+            
+            // 🔵 РИСУЕМ КРУЖОК
+            let circleY = currentY + (FontConfig.smallFont.lineHeight / 2) - circleRadius
+            let circleRect = CGRect(x: circleX - circleRadius, y: circleY, width: circleRadius * 2, height: circleRadius * 2)
+            
+            context.setFillColor(circleColor.cgColor)
+            context.fillEllipse(in: circleRect)
+            
+            // Добавляем Y-координату в массив для линий
+            circleYPositions.append(circleY + circleRadius) // Центр кружка
+            
+            print("⚪ Кружок #\(index + 1) отрисован в позиции (\(circleX), \(circleY))")
             
             // Период обучения
-            let periodText = education.isCurrentlyStudying ? 
-                "\(education.whenStart) - Present" : 
-                "\(education.whenStart) - \(education.whenFinished)"
+            let periodText = education.isCurrentlyStudying ?
+                "\(extractYear(from: education.whenStart)) - Present" :
+                "\(extractYear(from: education.whenStart)) - \(extractYear(from: education.whenFinished))"
             let periodString = NSAttributedString(string: periodText, attributes: periodAttributes)
             periodString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += periodString.size().height + LayoutConfig.largeSpacing
+            currentY += periodString.size().height + LayoutConfig.smallSpacing
             print("📅 Период обучения '\(periodText)' отрисован в позиции (\(contentX), \(currentY - periodString.size().height))")
+            
+            // Название учебного заведения
+            let schoolString = NSAttributedString(string: education.schoolName.uppercased(), attributes: schoolNameAttributes)
+            schoolString.draw(at: CGPoint(x: contentX, y: currentY))
+            currentY += schoolString.size().height + LayoutConfig.largeSpacing + 100
+            print("🏫 Образование #\(index + 1): '\(education.schoolName)' отрисовано в позиции (\(contentX), \(currentY - schoolString.size().height))")
+        }
+        
+        // 📏 РИСУЕМ СОЕДИНИТЕЛЬНЫЕ ЛИНИИ (если больше одного образования)
+        if circleYPositions.count > 1 {
+            context.setStrokeColor(lineColor.cgColor)
+            context.setLineWidth(lineWidth)
+            
+            for i in 0..<(circleYPositions.count - 1) {
+                let startY = circleYPositions[i]
+                let endY = circleYPositions[i + 1]
+                
+                // Рисуем вертикальную линию между кружками
+                context.move(to: CGPoint(x: circleX, y: startY))
+                context.addLine(to: CGPoint(x: circleX, y: endY))
+                context.strokePath()
+                
+                print("📏 Соединительная линия от (\(circleX), \(startY)) до (\(circleX), \(endY))")
+            }
         }
     }
     
@@ -410,7 +476,7 @@ class PDF_1_Generator: ObservableObject {
      */
     private func drawWorkExperience(formData: SurveyFormData, in context: CGContext) {
         // Позиция пятого прямоугольника (левый нижний)
-        let rect5 = CGRect(x: 0, y: rectangleHeight * 2, width: rectangleWidth, height: rectangleHeight)
+        let rect5 =  CGRect(x: rectangleCoordinates[5].0, y: rectangleCoordinates[5].1, width: rectangleWidth, height: rectangleHeight)
         
         // Начальная позиция для контента
         var currentY = rect5.minY + LayoutConfig.sectionTopMargin
@@ -469,8 +535,7 @@ class PDF_1_Generator: ObservableObject {
      */
     private func drawAdditionalInfo(formData: SurveyFormData, in context: CGContext) {
         // Позиция шестого прямоугольника (правый нижний)
-        let rect6 = CGRect(x: rectangleWidth, y: rectangleHeight * 2, width: rectangleWidth, height: rectangleHeight)
-        
+        let rect6 =  CGRect(x: rectangleCoordinates[2].0, y: rectangleCoordinates[2].1, width: rectangleWidth, height: rectangleHeight)
         // Начальная позиция для контента
         var currentY = rect6.minY + LayoutConfig.sectionTopMargin
         let textX = rect6.minX + LayoutConfig.sectionLeftMargin
@@ -506,4 +571,17 @@ class PDF_1_Generator: ObservableObject {
             print("📝 Дополнительная информация '\(info)' отрисована в позиции (\(contentX), \(currentY - infoString.size().height))")
         }
     }
-} 
+    
+    private func extractYear(from dateString: String) -> String {
+        // Ищем 4 цифры подряд (год)
+        let regex = try? NSRegularExpression(pattern: "\\d{4}")
+        let range = NSRange(location: 0, length: dateString.utf16.count)
+        
+        if let match = regex?.firstMatch(in: dateString, range: range) {
+            let yearRange = Range(match.range, in: dateString)!
+            return String(dateString[yearRange])
+        }
+        
+        return dateString  // Если год не найден, возвращаем оригинал
+    }
+}
