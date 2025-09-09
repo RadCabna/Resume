@@ -63,7 +63,7 @@ struct NewWork: View {
                             .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
                             .foregroundStyle(Color.black)
                             .padding(.horizontal, screenWidth*0.1)
-                            .keyboardType(.numbersAndPunctuation)
+                            .keyboardType(.default)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                     }
@@ -79,7 +79,7 @@ struct NewWork: View {
                             .font(Font.custom("Figtree-Regular", size: screenHeight*0.022))
                             .foregroundStyle(Color.black)
                             .padding(.horizontal, screenWidth*0.1)
-                            .keyboardType(.numbersAndPunctuation)
+                            .keyboardType(.default)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                     }

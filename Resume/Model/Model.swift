@@ -72,7 +72,7 @@ class Arrays {
         "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional."
 ]
     static var stepsTextScreen_5 = [
-        ""
+        "Professional Summary", "Your summary sits near the top of your resume, typically just below your contact details. It should briefly highlight your career direction or goals. Think of it as a quick headline that grabs attention and shows how you align with the role you're applying for.", "Write with AI", "You have 3 AI generations remaining in your free trial.", "Provide a brief overview of the key aspects and significant highlights of your experience below:", "Suggested Highlights"
         ]
     static var stepsTextScreen_6 = [
      ""

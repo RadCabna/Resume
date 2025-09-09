@@ -29,10 +29,11 @@ class PDF_1_Generator: ObservableObject {
         static let nameFont = UIFont(name: "Figtree-ExtraBold", size: 150) ?? UIFont.boldSystemFont(ofSize: 28)
         static let surnameFont = UIFont(name: "Figtree-ExtraBold", size: 150) ?? UIFont.boldSystemFont(ofSize: 28)
         static let positionFont = UIFont(name: "Figtree-Medium", size: 80) ?? UIFont.systemFont(ofSize: 16)
-        static let sectionTitleFont = UIFont(name: "Figtree-Bold", size: 90) ?? UIFont.systemFont(ofSize: 18, weight: .medium)
-        static let contentFont = UIFont(name: "Figtree-Regular", size: 60) ?? UIFont.systemFont(ofSize: 12)
-        static let smallFont = UIFont(name: "Figtree-Regular", size: 60) ?? UIFont.systemFont(ofSize: 10)
+        static let sectionTitleFont = UIFont(name: "Figtree-Bold", size: 70) ?? UIFont.systemFont(ofSize: 18, weight: .medium)
+        static let contentFont = UIFont(name: "Figtree-Regular", size: 50) ?? UIFont.systemFont(ofSize: 12)
+        static let smallFont = UIFont(name: "Figtree-Regular", size: 48) ?? UIFont.systemFont(ofSize: 10)
         static let infoFont = UIFont(name: "Figtree-Medium", size: 40) ?? UIFont.systemFont(ofSize: 10)
+        static let summaryFont = UIFont(name: "Figtree-Regular", size: 36) ?? UIFont.systemFont(ofSize: 10)
     }
     
     // MARK: - Color Configuration
@@ -85,6 +86,7 @@ class PDF_1_Generator: ObservableObject {
      */
     func generatePDF(formData: SurveyFormData, userPhoto: UIImage? = nil) -> Data? {
         
+
         // Создаем метаданные PDF документа
         let pdfMetaData = [
             kCGPDFContextCreator: "Resume App",
@@ -111,7 +113,7 @@ class PDF_1_Generator: ObservableObject {
             
             drawBackgroundStar(in: cgContext)
             
-            drawAboutMeFrame(in: cgContext)
+            drawAboutMeFrame(formData: formData, in: cgContext)
             
             // 2. Добавляем фото пользователя (1-й прямоугольник)
             drawUserPhoto(userPhoto, in: cgContext)
@@ -188,14 +190,59 @@ class PDF_1_Generator: ObservableObject {
         
     }
     
-    private func drawAboutMeFrame(in context: CGContext) {
+    private func drawAboutMeFrame(formData: SurveyFormData, in context: CGContext) {
         
         let aboutMeFrameName = "pdf_1_aboutMeFrame"
         
         let aboutMeFrameRect = CGRect(x: 940, y: 460, width: 1418, height: 400)
         
+        // Рисуем рамку
         if let aboutMeFrameImage = UIImage(named: aboutMeFrameName) {
             aboutMeFrameImage.draw(in: aboutMeFrameRect)
+        }
+        
+        // Определяем базовые параметры для текста внутри рамки
+        let padding: CGFloat = 40
+        let titleSpacing: CGFloat = 20 // Отступ между заголовком и текстом
+        var currentY = aboutMeFrameRect.minY + padding
+        let textX = aboutMeFrameRect.minX + padding
+        let textWidth = aboutMeFrameRect.width - (padding * 2)
+        
+        // Рисуем заголовок "About me"
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: FontConfig.sectionTitleFont,
+            .foregroundColor: ColorConfig.sectionTitleColor
+        ]
+        let titleString = NSAttributedString(string: "About me".uppercased(), attributes: titleAttributes)
+        titleString.draw(at: CGPoint(x: textX, y: currentY))
+        currentY += titleString.size().height + titleSpacing
+        print("📝 Заголовок 'About me' отрисован в позиции (\(textX), \(currentY - titleString.size().height - titleSpacing))")
+        
+        // Рисуем текст summary
+        let summaryText = formData.summaryData.summaryText
+        if !summaryText.trimmingCharacters(in: .whitespaces).isEmpty {
+            
+            // Настройки шрифта и цвета для summary
+            let summaryAttributes: [NSAttributedString.Key: Any] = [
+                .font: FontConfig.summaryFont,
+                .foregroundColor: ColorConfig.contentColor
+            ]
+            
+            // Создаем атрибутированную строку
+            let summaryString = NSAttributedString(string: summaryText, attributes: summaryAttributes)
+            
+            // Определяем область для summary текста (учитываем заголовок)
+            let summaryRect = CGRect(
+                x: textX,
+                y: currentY,
+                width: textWidth,
+                height: aboutMeFrameRect.maxY - currentY - padding
+            )
+            
+            // Рисуем текст с переносом строк
+            summaryString.draw(with: summaryRect, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+            
+            print("📝 Summary текст отрисован в позиции (\(textX), \(currentY)): '\(summaryText)'")
         }
     }
     
@@ -206,30 +253,73 @@ class PDF_1_Generator: ObservableObject {
      */
     private func drawUserPhoto(_ photo: UIImage?, in context: CGContext) {
         // Позиция первого прямоугольника (левый верхний)
-        let rect1 = CGRect(x: 0, y: 0, width: rectangleWidth, height: rectangleHeight)
+        let rect1 = CGRect(x: 0, y: 0, width: rectangleWidthArray[0], height: rectangleHeightArray[0])
         
-        // Вычисляем позицию фото с отступами
-        let photoX = rect1.minX + LayoutConfig.photoLeftMargin
-        let photoY = rect1.minY + LayoutConfig.photoTopMargin
-        let photoRect = CGRect(x: photoX, y: photoY, 
-                              width: LayoutConfig.photoSize, 
-                              height: LayoutConfig.photoSize)
+        // Новые размеры фото: 517x517
+        let photoSize: CGFloat = 517
+        let borderThickness: CGFloat = 11  // Толщина рамки с каждой стороны
+        
+        // Центрируем фото в первом прямоугольнике
+        let photoX = rect1.midX - photoSize/2
+        let photoY = rect1.midY - photoSize/2
+        let photoRect = CGRect(x: photoX, y: photoY, width: photoSize, height: photoSize)
+        
+        // Синий прямоугольник-рамка: на 22px шире и выше (11px с каждой стороны)
+        let borderRect = CGRect(x: photoX - borderThickness, 
+                               y: photoY - borderThickness, 
+                               width: photoSize + borderThickness * 2, 
+                               height: photoSize + borderThickness * 2)
         
         if let userPhoto = photo {
-            // Создаем круглую маску для фото
-            let path = UIBezierPath(roundedRect: photoRect, cornerRadius: LayoutConfig.photoCornerRadius)
-            path.addClip()
+            // 1. СНАЧАЛА рисуем синий прямоугольник-рамку ПОД фото
+            context.setFillColor(UIColor.blue.cgColor)
+            context.fill(borderRect)
             
-            // Рисуем фото
-            userPhoto.draw(in: photoRect)
-            print("📸 Фото пользователя отрисовано в позиции (\(photoX), \(photoY)) размером \(LayoutConfig.photoSize)x\(LayoutConfig.photoSize)")
+            // СОХРАНЯЕМ графический контекст перед применением маски
+            context.saveGState()
+            
+            // 2. Создаем прямоугольную маску для обрезки фото (без скруглений)
+            let clipPath = UIBezierPath(rect: photoRect)
+            clipPath.addClip()
+            
+            // 3. Вычисляем размеры для scaledToFill (фото заполняет всю область без сжатия)
+            let imageSize = userPhoto.size
+            let targetSize = CGSize(width: photoSize, height: photoSize)
+            
+            // Вычисляем коэффициент масштабирования для заполнения всей области
+            let scaleX = targetSize.width / imageSize.width
+            let scaleY = targetSize.height / imageSize.height
+            let scale = max(scaleX, scaleY) // Используем больший масштаб для заполнения
+            
+            // Вычисляем итоговые размеры изображения
+            let scaledWidth = imageSize.width * scale
+            let scaledHeight = imageSize.height * scale
+            
+            // Центрируем изображение в области фото
+            let imageX = photoX + (photoSize - scaledWidth) / 2
+            let imageY = photoY + (photoSize - scaledHeight) / 2
+            let imageRect = CGRect(x: imageX, y: imageY, width: scaledWidth, height: scaledHeight)
+            
+            // 4. Рисуем фото (будет обрезано по маске)
+            userPhoto.draw(in: imageRect)
+            
+            // ВОССТАНАВЛИВАЕМ графический контекст после отрисовки фото
+            context.restoreGState()
+            
+            print("📸 Фото пользователя отрисовано в позиции (\(photoX), \(photoY)) размером \(photoSize)x\(photoSize) с синей рамкой \(borderThickness)px")
         } else {
-            // Если фото нет, рисуем placeholder
-            context.setFillColor(UIColor.lightGray.cgColor)
-            context.fillEllipse(in: photoRect)
+            // Если фото нет, рисуем placeholder с такой же синей рамкой
             
-            // Добавляем текст "Фото"
-            let placeholderText = "Фото"
+            // 1. Рисуем синий прямоугольник-рамку ПОД placeholder
+            context.setFillColor(UIColor.blue.cgColor)
+            context.fill(borderRect)
+            
+            // 2. Рисуем серый прямоугольник вместо фото
+            context.setFillColor(UIColor.lightGray.cgColor)
+            context.fill(photoRect)
+            
+            // 3. Добавляем текст "PHOTO"
+            let placeholderText = "PHOTO"
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: FontConfig.contentFont,
                 .foregroundColor: UIColor.darkGray
@@ -240,7 +330,7 @@ class PDF_1_Generator: ObservableObject {
             let textY = photoRect.midY - textSize.height / 2
             attributedString.draw(at: CGPoint(x: textX, y: textY))
             
-            print("🖼️ Placeholder фото отрисован в позиции (\(photoX), \(photoY))")
+            print("🖼️ Placeholder фото отрисован в позиции (\(photoX), \(photoY)) размером \(photoSize)x\(photoSize) с синей рамкой \(borderThickness)px")
         }
     }
     
@@ -395,11 +485,11 @@ class PDF_1_Generator: ObservableObject {
         ]
         let titleString = NSAttributedString(string: "Education".uppercased(), attributes: titleAttributes)
         titleString.draw(at: CGPoint(x: textX, y: currentY))
-        currentY += titleString.size().height + LayoutConfig.largeSpacing
+        currentY += titleString.size().height + LayoutConfig.largeSpacing + 50
         print("🎓 Заголовок 'Education' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
         
         // Контент - список образований
-        let contentX = textX + LayoutConfig.contentLeftIndent
+        let contentX = textX + LayoutConfig.contentLeftIndent + 150
         let schoolNameAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.contentFont,
             .foregroundColor: ColorConfig.contentColor
@@ -411,7 +501,7 @@ class PDF_1_Generator: ObservableObject {
         
         // Настройки для кружков и линий
         let circleRadius: CGFloat = 30
-        let circleX = contentX - 60  // Позиция кружков левее текста
+        let circleX = contentX - 130  // Позиция кружков левее текста
         let lineWidth: CGFloat = 2
         let lineColor = UIColor.white
         let circleColor = UIColor.white

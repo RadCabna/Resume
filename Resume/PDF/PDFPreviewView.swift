@@ -116,6 +116,10 @@ struct PDFPreviewView: View {
             // Автоматически генерируем PDF при появлении view
             generatePDF()
         }
+        .onChange(of: userPhoto) { _ in
+            // Перегенерируем PDF при изменении фото
+            generatePDF()
+        }
     }
     
     // MARK: - PDF Generation
@@ -212,6 +216,13 @@ struct PDFKitView: UIViewRepresentable {
         if let document = PDFDocument(data: data) {
             pdfView.document = document
             pdfView.go(to: document.page(at: 0)!)  // Переходим на первую страницу
+            
+            // Автоматически масштабируем для показа всей страницы
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+                print("📏 PDF масштабирован для показа всей страницы, масштаб: \(pdfView.scaleFactor)")
+            }
+            
             print("📄 PDF документ загружен в PDFView, страниц: \(document.pageCount)")
         } else {
             print("❌ Не удалось создать PDFDocument из данных")
@@ -228,6 +239,13 @@ struct PDFKitView: UIViewRepresentable {
         if let document = PDFDocument(data: data) {
             uiView.document = document
             uiView.go(to: document.page(at: 0)!)
+            
+            // Автоматически масштабируем для показа всей страницы
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                uiView.scaleFactor = uiView.scaleFactorForSizeToFit
+                print("📏 PDF обновлен и масштабирован, масштаб: \(uiView.scaleFactor)")
+            }
+            
             print("🔄 PDF документ обновлен в PDFView")
         }
     }
@@ -280,6 +298,10 @@ struct PDFKitView: UIViewRepresentable {
     work2.whenFinished = "05/2022"
     work2.isCurentlyWork = false
     testFormData.works.append(work2)
+    
+    let summaryData = SummaryData()
+    summaryData.summaryText = "Result-driven Project Manager with over 3 years of experience in leading cross-functional teams, delivering digital products, and ensuring on-time, on-budget execution. Skilled in Agile and Scrum methodologies, stakeholder communication, and risk management. Passionate about optimizing workflows and achieving business goals through clear planning and proactive leadership."
+    testFormData.summaryData = summaryData
     
     return PDFPreviewView(formData: testFormData)
 } 

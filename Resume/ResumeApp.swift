@@ -13,7 +13,7 @@ struct ResumeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            let testFormData = SurveyFormData()
+//            let testFormData = SurveyFormData()
             MainView()
             
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)

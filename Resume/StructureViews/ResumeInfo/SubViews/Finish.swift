@@ -7,9 +7,11 @@
 
 import SwiftUI
 import PDFKit
+import CoreData
 
 struct Finish: View {
     @ObservedObject var formData: SurveyFormData
+    @ObservedObject var surveyManager: SurveyManager
     @State private var stepNumber = 7  // Finish screen (8-й шаг, индекс 7)
     @State private var stepsTextArray = Arrays.stepsTextArray
     @StateObject private var keyboardObserver = KeyboardObserver()
@@ -19,6 +21,11 @@ struct Finish: View {
     @State private var pdfThumbnailImage: UIImage?
     @State private var showingPDFView = false
     
+    // MARK: - Photo Management
+    @State private var profilePhoto: UIImage?
+    @State private var showingPhotoPicker = false
+    @State private var photoUpdateID = UUID() // Для принудительного обновления PDF
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: screenHeight*0.02) {
@@ -27,10 +34,22 @@ struct Finish: View {
                     .scaledToFit()
                     .overlay(
                         HStack {
-                            Image(.noPhoto)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: screenHeight*0.18)
+                            Button(action: {
+                                showingPhotoPicker = true
+                            }) {
+                                if let profilePhoto = profilePhoto {
+                                    Image(uiImage: profilePhoto)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: screenHeight*0.15, height: screenHeight*0.18)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                } else {
+                                    Image(.noPhoto)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: screenHeight*0.18)
+                                }
+                            }
                             VStack(alignment: .leading) {
                                 HStack {
                                     Text(formData.name)
@@ -81,10 +100,153 @@ struct Finish: View {
             .animation(.easeInOut(duration: 0.3), value: keyboardObserver.isKeyboardVisible)
         }
         .sheet(isPresented: $showingPDFView) {
-            PDFPreviewView(formData: formData)
+            PDFPreviewView(formData: formData, userPhoto: formData.photos.first?.image)
+                .id(photoUpdateID) // Принудительно пересоздаем view при изменении фото
+        }
+        .sheet(isPresented: $showingPhotoPicker) {
+            PhotoPicker(selectedImage: $profilePhoto)
         }
         .onAppear {
-            generatePDFThumbnail()
+            // Отладочная информация
+            print("🔍 Finish onAppear - данные в formData:")
+            print("📝 Name: '\(formData.name)', Surname: '\(formData.surname)'")
+            print("📧 Email: '\(formData.email)', Phone: '\(formData.phone)'")
+            print("🎓 Educations count: \(formData.educations.count)")
+            if !formData.educations.isEmpty {
+                print("🎓 First education: '\(formData.educations[0].schoolName)'")
+            }
+            print("💼 Works count: \(formData.works.count)")
+            if !formData.works.isEmpty {
+                print("💼 First work: '\(formData.works[0].companyName)' - '\(formData.works[0].position)'")
+            }
+            print("📝 Summary: '\(formData.summaryData.summaryText)'")
+            print("📷 Photos count: \(formData.photos.count)")
+            
+            // Убеждаемся что все данные сохранены в CoreData перед генерацией PDF
+            surveyManager.saveDraft()
+            // Принудительно перезагружаем все данные из CoreData
+            surveyManager.forceReloadFromCoreData()
+            
+            // Отладочная информация после перезагрузки
+            print("🔄 После перезагрузки:")
+            print("🎓 Educations count: \(formData.educations.count)")
+            print("💼 Works count: \(formData.works.count)")
+            
+            // Небольшая задержка перед генерацией PDF чтобы данные успели обновиться
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                generatePDFThumbnail()
+            }
+            loadProfilePhoto()
+        }
+        .onChange(of: profilePhoto) { _ in
+            saveProfilePhoto()
+            
+            // Даем время CoreData сохранить данные, затем перезагружаем все данные
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                surveyManager.forceReloadFromCoreData()
+                generatePDFThumbnail() // Перегенерируем превью PDF с новым фото
+                photoUpdateID = UUID() // Обновляем ID для принудительной перегенерации PDF view
+            }
+        }
+    }
+    
+    // MARK: - Photo Management Functions
+    
+    private func loadProfilePhoto() {
+        // Загружаем первое фото из formData.photos как профильное
+        if let firstPhoto = formData.photos.first,
+           let image = firstPhoto.image {
+            profilePhoto = image
+        }
+    }
+    
+    private func saveProfilePhoto() {
+
+        // Сохраняем выбранное фото в formData.photos
+        if let photo = profilePhoto {
+            let photoData = PhotoData()
+            photoData.image = photo
+            photoData.fileName = "profile_\(Date().timeIntervalSince1970).jpg"
+            photoData.createdAt = Date()
+            
+            // Заменяем или добавляем как первое фото
+            if formData.photos.isEmpty {
+                formData.photos.append(photoData)
+            } else {
+                formData.photos[0] = photoData
+            }
+            
+            // Сразу сохраняем в CoreData
+            savePhotoToCoreData(photo)
+            
+            print("📷 Профильное фото сохранено в память и CoreData")
+        }
+    }
+    
+    private func savePhotoToCoreData(_ image: UIImage) {
+        // Используем тот же контекст, что и SurveyManager
+        let viewContext = surveyManager.context
+        
+        // Находим текущий черновик Person
+        let request: NSFetchRequest<Person> = Person.fetchRequest()
+        request.predicate = NSPredicate(format: "isDraft == true")
+        request.sortDescriptors = [NSSortDescriptor(key: "lastModified", ascending: false)]
+        request.fetchLimit = 1
+        
+        do {
+            let drafts = try viewContext.fetch(request)
+            
+            guard let currentDraft = drafts.first else {
+                print("❌ Черновик не найден в savePhotoToCoreData")
+                return
+            }
+            
+            // Удаляем старые фото для этого Person
+            deleteExistingPhotosFromCoreData(for: currentDraft, context: viewContext)
+            
+
+            
+            // Создаем новое фото в CoreData
+            let photo = Photo(context: viewContext)
+            
+            // Сжимаем изображение для хранения
+            if let compressedData = image.jpegData(compressionQuality: 0.8) {
+                photo.imageData = compressedData
+            }
+            
+            // Создаем thumbnail
+            if let thumbnail = image.resized(to: CGSize(width: 150, height: 150)),
+               let thumbnailData = thumbnail.jpegData(compressionQuality: 0.7) {
+                photo.thumbnailData = thumbnailData
+            }
+            
+            photo.fileName = "profile_\(Date().timeIntervalSince1970).jpg"
+            photo.createdAt = Date()
+            photo.person = currentDraft
+            
+            // Сохраняем изменения
+            try viewContext.save()
+            print("📷 Фото успешно сохранено в CoreData")
+            
+
+            
+        } catch {
+            print("❌ Ошибка сохранения фото в CoreData: \(error)")
+        }
+    }
+    
+    private func deleteExistingPhotosFromCoreData(for person: Person, context: NSManagedObjectContext) {
+        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", person)
+        
+        do {
+            let existingPhotos = try context.fetch(request)
+            for photo in existingPhotos {
+                context.delete(photo)
+            }
+            print("🗑️ Удалено старых фото: \(existingPhotos.count)")
+        } catch {
+            print("❌ Ошибка удаления старых фото: \(error)")
         }
     }
     
@@ -271,32 +433,48 @@ struct Finish: View {
 }
 
 #Preview {
-    let testFormData = SurveyFormData()
-    testFormData.name = "John"
-    testFormData.surname = "Doe"
-    testFormData.email = "john.doe@example.com"
-    testFormData.phone = "+1 (555) 123-4567"
-    testFormData.website = "www.johndoe.com"
-    testFormData.address = "123 Main St, New York, NY"
+    // Используем замыкание для инициализации
+    let (testFormData, testSurveyManager) = {
+        let formData = SurveyFormData()
+        formData.name = "John"
+        formData.surname = "Doe"
+        formData.email = "john.doe@example.com"
+        formData.phone = "+1 (555) 123-4567"
+        formData.website = "www.johndoe.com"
+        formData.address = "123 Main St, New York, NY"
+        formData.adress_1 = "Apt 4B"
+        
+        // Добавляем тестовое образование
+        let education = EducationData()
+        education.schoolName = "Harvard University"
+        education.whenStart = "09/2018"
+        education.whenFinished = "05/2022"
+        education.isCurrentlyStudying = false
+        formData.educations.append(education)
+        
+        // Добавляем тестовую работу
+        let work = WorkData()
+        work.companyName = "Apple Inc."
+        work.position = "Software Engineer"
+        work.companiLocation = "Cupertino, CA"
+        work.whenStart = "06/2022"
+        work.whenFinished = "Present"
+        work.isCurentlyWork = true
+        formData.works.append(work)
+        
+        // Добавляем тестовый summary
+        let summaryData = SummaryData()
+        summaryData.summaryText = "Experienced software engineer with expertise in iOS development."
+        formData.summaryData = summaryData
+        
+        // Создаем тестовый SurveyManager
+        let surveyManager = SurveyManager(context: PersistenceController.preview.container.viewContext)
+        surveyManager.formData = formData
+        
+        return (formData, surveyManager)
+    }()
     
-    // Добавляем тестовое образование
-    let education = EducationData()
-    education.schoolName = "Harvard University"
-    education.whenStart = "09/2018"
-    education.whenFinished = "05/2022"
-    education.isCurrentlyStudying = false
-    testFormData.educations.append(education)
-    
-    // Добавляем тестовую работу
-    let work = WorkData()
-    work.companyName = "Apple Inc."
-    work.position = "Software Engineer"
-    work.companiLocation = "Cupertino, CA"
-    work.whenStart = "06/2022"
-    work.isCurentlyWork = true
-    testFormData.works.append(work)
-    
-    return Finish(formData: testFormData)
+    Finish(formData: testFormData, surveyManager: testSurveyManager)
 }
 
 // MARK: - PDF Thumbnail Extension
@@ -306,8 +484,9 @@ extension Finish {
      * Генерирует миниатюру PDF документа
      */
     private func generatePDFThumbnail() {
+
         DispatchQueue.global(qos: .userInitiated).async {
-            guard let pdfData = pdfGenerator.generatePDF(formData: formData, userPhoto: nil),
+            guard let pdfData = pdfGenerator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image),
                   let pdfDocument = PDFDocument(data: pdfData),
                   let firstPage = pdfDocument.page(at: 0) else {
                 print("❌ Не удалось создать PDF или получить первую страницу")
@@ -336,6 +515,9 @@ extension Finish {
                 .foregroundStyle(Color.black)
             
             Button(action: {
+                // Убеждаемся что все данные сохранены перед открытием PDF
+                surveyManager.saveDraft()
+                surveyManager.forceReloadFromCoreData()
                 showingPDFView = true
                 print("📄 Открываем полный просмотр PDF")
             }) {

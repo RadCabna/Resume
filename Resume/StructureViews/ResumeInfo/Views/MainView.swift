@@ -121,8 +121,10 @@ struct MainView: View {
                      justSavedWork: $justSavedWork,
                      editingWorkIndex: $editingWorkIndex
             )
+        case 4:
+            ClearSummary(formData: surveyManager.formData)
         case 7:
-            Finish(formData: surveyManager.formData)
+            Finish(formData: surveyManager.formData, surveyManager: surveyManager)
         // Добавьте здесь остальные экраны по мере их создания
         // case 3: Education(formData: surveyManager.formData)
         // case 4: Skills(formData: surveyManager.formData)

@@ -23,6 +23,11 @@ class SurveyManager: ObservableObject {
     // CoreData context
     private let viewContext: NSManagedObjectContext
     
+    // Публичный доступ к контексту для синхронизации
+    var context: NSManagedObjectContext {
+        return viewContext
+    }
+    
     init(context: NSManagedObjectContext) {
         self.viewContext = context
         loadOrCreateDraft()
@@ -81,6 +86,12 @@ class SurveyManager: ObservableObject {
         
         // Загружаем опыт работы
         loadWorksFromDraft(draft)
+        
+        // Загружаем summary
+        loadSummaryFromDraft(draft)
+        
+        // Загружаем photos
+        loadPhotosFromDraft(draft)
     }
     
     // Загружаем образования из CoreData в formData (оперативную память)
@@ -115,6 +126,33 @@ class SurveyManager: ObservableObject {
         }
     }
     
+    // Загружаем summary из CoreData в formData (оперативную память)
+    private func loadSummaryFromDraft(_ draft: Person) {
+        let request: NSFetchRequest<Summary> = Summary.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        
+        do {
+            let summaries = try viewContext.fetch(request)
+            if let summary = summaries.first {
+                formData.summaryData = SummaryData(from: summary)
+                print("📝 Загружен summary")
+            } else {
+                formData.summaryData = SummaryData()
+                print("📝 Summary не найден, создан пустой")
+            }
+        } catch {
+            print("❌ Ошибка загрузки summary: \(error)")
+            formData.summaryData = SummaryData()
+        }
+    }
+    
+    // Принудительно загружаем все данные из CoreData в formData
+    func forceReloadFromCoreData() {
+        guard let draft = draftPerson else { return }
+        loadDataFromDraft()
+        print("🔄 Принудительно перезагружены все данные из CoreData")
+    }
+    
     // Сохраняем данные из formData в черновик CoreData
     func saveDraft() {
         guard let draft = draftPerson else { return }
@@ -134,6 +172,12 @@ class SurveyManager: ObservableObject {
         
         // Сохраняем опыт работы в CoreData
         saveWorksToDraft(draft)
+        
+        // Сохраняем summary в CoreData
+        saveSummaryToDraft(draft)
+        
+        // Сохраняем photos в CoreData
+        savePhotosToDraft(draft)
         
         // Сохраняем в базу данных
         do {
@@ -224,6 +268,111 @@ class SurveyManager: ObservableObject {
         print("💼 Создано новых работ: \(formData.works.count)")
     }
     
+    // MARK: - Методы для работы с Summary
+    
+    // Сохраняем summary в черновик
+    private func saveSummaryToDraft(_ draft: Person) {
+        // 1. Удаляем старую запись summary
+        deleteExistingSummary(for: draft)
+        
+        // 2. Создаем новую запись summary если есть текст
+        createNewSummary(for: draft)
+    }
+    
+    // Удаляем существующий summary для Person
+    private func deleteExistingSummary(for person: Person) {
+        let request: NSFetchRequest<Summary> = Summary.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", person)
+        
+        do {
+            let existingSummaries = try viewContext.fetch(request)
+            for summary in existingSummaries {
+                viewContext.delete(summary)
+            }
+            print("🗑️ Удалено старых summary: \(existingSummaries.count)")
+        } catch {
+            print("❌ Ошибка удаления старого summary: \(error)")
+        }
+    }
+    
+    // Создаем новый summary для Person
+    private func createNewSummary(for person: Person) {
+        if !formData.summaryData.summaryText.trimmingCharacters(in: .whitespaces).isEmpty {
+            let summary = Summary(context: viewContext)
+            summary.summaryText = formData.summaryData.summaryText
+            summary.person = person  // Устанавливаем связь
+            print("📝 Создан новый summary")
+        }
+    }
+    
+    // MARK: - Методы для работы с Photos
+    
+    // Сохраняем photos в черновик
+    private func savePhotosToDraft(_ draft: Person) {
+        // 1. Удаляем старые фото
+        deleteExistingPhotos(for: draft)
+        
+        // 2. Создаем новые фото
+        createNewPhotos(for: draft)
+    }
+    
+    // Удаляем существующие фото для Person
+    private func deleteExistingPhotos(for person: Person) {
+        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", person)
+        
+        do {
+            let existingPhotos = try viewContext.fetch(request)
+            for photo in existingPhotos {
+                viewContext.delete(photo)
+            }
+            print("🗑️ Удалено старых фото: \(existingPhotos.count)")
+        } catch {
+            print("❌ Ошибка удаления старых фото: \(error)")
+        }
+    }
+    
+    // Создаем новые фото для Person
+    private func createNewPhotos(for person: Person) {
+        for photoData in formData.photos {
+            if let image = photoData.image {
+                let photo = Photo(context: viewContext)
+                
+                // Сжимаем изображение для хранения
+                if let compressedData = image.jpegData(compressionQuality: 0.8) {
+                    photo.imageData = compressedData
+                }
+                
+                // Создаем thumbnail
+                if let thumbnail = image.resized(to: CGSize(width: 150, height: 150)),
+                   let thumbnailData = thumbnail.jpegData(compressionQuality: 0.7) {
+                    photo.thumbnailData = thumbnailData
+                }
+                
+                photo.fileName = photoData.fileName
+                photo.createdAt = photoData.createdAt
+                photo.person = person
+            }
+        }
+        print("📷 Создано новых фото: \(formData.photos.count)")
+    }
+    
+    // Загружаем photos из CoreData в formData (оперативную память)
+    private func loadPhotosFromDraft(_ draft: Person) {
+        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: true)]
+        
+        do {
+            let photos = try viewContext.fetch(request)
+            formData.photos = photos.map { PhotoData(from: $0) }
+            print("📷 Загружено фото: \(photos.count)")
+        } catch {
+            print("❌ Ошибка загрузки фото: \(error)")
+            formData.photos = []
+        }
+    }
+    
     // MARK: - Навигация между экранами
     
     // Переход на следующий экран
@@ -307,8 +456,55 @@ class SurveyManager: ObservableObject {
             return !formData.works.isEmpty && 
                    formData.works.allSatisfy { $0.isValid }
             
+        case 4: // Summary экран - проверяем наличие текста summary
+            return formData.summaryData.isValid
+            
         default:
             return true // Остальные экраны пока не проверяем
+        }
+    }
+    
+    // MARK: - Debug Functions
+    
+    /// Полная очистка всех данных CoreData (для отладки)
+    func deleteAllCoreDataRecords() {
+        let context = self.viewContext
+        
+        // Удаляем все Person записи
+        let personRequest: NSFetchRequest<NSFetchRequestResult> = Person.fetchRequest()
+        let personDeleteRequest = NSBatchDeleteRequest(fetchRequest: personRequest)
+        
+        // Удаляем все Education записи
+        let educationRequest: NSFetchRequest<NSFetchRequestResult> = Education.fetchRequest()
+        let educationDeleteRequest = NSBatchDeleteRequest(fetchRequest: educationRequest)
+        
+        // Удаляем все Work записи
+        let workRequest: NSFetchRequest<NSFetchRequestResult> = Work.fetchRequest()
+        let workDeleteRequest = NSBatchDeleteRequest(fetchRequest: workRequest)
+        
+        // Удаляем все Summary записи
+        let summaryRequest: NSFetchRequest<NSFetchRequestResult> = Summary.fetchRequest()
+        let summaryDeleteRequest = NSBatchDeleteRequest(fetchRequest: summaryRequest)
+        
+        // Удаляем все Photo записи
+        let photoRequest: NSFetchRequest<NSFetchRequestResult> = Photo.fetchRequest()
+        let photoDeleteRequest = NSBatchDeleteRequest(fetchRequest: photoRequest)
+        
+        do {
+            try context.execute(personDeleteRequest)
+            try context.execute(educationDeleteRequest)
+            try context.execute(workDeleteRequest)
+            try context.execute(summaryDeleteRequest)
+            try context.execute(photoDeleteRequest)
+            try context.save()
+            
+            print("🗑️ ВСЕ ДАННЫЕ COREDATA УДАЛЕНЫ!")
+            
+            // Очищаем формы
+            formData = SurveyFormData()
+            
+        } catch {
+            print("❌ Ошибка удаления данных CoreData: \(error)")
         }
     }
 }
@@ -331,6 +527,12 @@ class SurveyFormData: ObservableObject {
     
     // Опыт работы
     @Published var works: [WorkData] = []
+    
+    // Summary
+    @Published var summaryData: SummaryData = SummaryData()
+    
+    // Photos
+    @Published var photos: [PhotoData] = []
 }
 
 // MARK: - EducationData класс для временного хранения образования
@@ -381,6 +583,58 @@ class WorkData : ObservableObject, Identifiable {
     var isValid: Bool {
         return !companyName.trimmingCharacters(in: .whitespaces).isEmpty &&
                !position.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+}
+
+// MARK: - SummaryData класс для временного хранения summary
+class SummaryData: ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var summaryText = ""
+    
+    init() {}
+    
+    // Конструктор из CoreData объекта Summary
+    init(from summary: Summary) {
+        self.summaryText = summary.summaryText ?? ""
+    }
+    
+    // Валидация данных
+    var isValid: Bool {
+        return !summaryText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+}
+
+// MARK: - PhotoData класс для временного хранения фотографий
+class PhotoData: ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var image: UIImage?
+    @Published var fileName: String = ""
+    @Published var createdAt: Date = Date()
+    
+    init() {}
+    
+    // Конструктор из CoreData объекта Photo
+    init(from photo: Photo) {
+        if let imageData = photo.imageData {
+            self.image = UIImage(data: imageData)
+        }
+        self.fileName = photo.fileName ?? ""
+        self.createdAt = photo.createdAt ?? Date()
+    }
+    
+    // Валидация данных
+    var isValid: Bool {
+        return image != nil
+    }
+}
+
+// MARK: - UIImage Extension для сжатия изображений
+extension UIImage {
+    func resized(to size: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+        draw(in: CGRect(origin: .zero, size: size))
+        return UIGraphicsGetImageFromCurrentImageContext()
     }
 }
 
