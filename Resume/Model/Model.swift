@@ -14,6 +14,33 @@ struct StepMenu {
     var iconOff: String
 }
 
+class AdditionalPoint: ObservableObject, Codable {
+    @Published var active = false
+    var name: String
+    
+    init(active: Bool = false, name: String) {
+        self.active = active
+        self.name = name
+    }
+    
+    // Codable support
+    enum CodingKeys: String, CodingKey {
+        case active, name
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        active = try container.decode(Bool.self, forKey: .active)
+        name = try container.decode(String.self, forKey: .name)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(active, forKey: .active)
+        try container.encode(name, forKey: .name)
+    }
+}
+
 class Arrays {
     static var onboardingBG = ["onboardingBG1", "onboardingBG2", "onboardingBG3"]
     static var onboardingBottomFrame = ["onboardingBottomFrame1", "onboardingBottomFrame2", "onboardingBottomFrame3"]
@@ -58,7 +85,9 @@ class Arrays {
         "e.g. 09/2017 or Sep 2017",
         "When did you finish?",
         "Still in school? Just fill in the start date and toggle \n“Present.”",
-        "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional."
+        "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional.",
+        "Provide your educational details below:",
+        "When listing your education, avoid personal pronouns like “I” or “my.” Highlight key achievements, relevant coursework, or academic honors using strong action verbs (e.g., “specialized in,” “completed a thesis on,” “graduated with honors”). Where possible, quantify your achievements (e.g., “achieved a 4.8 GPA,” “graduated in the top 5% of the class”)."
     ]
     
     static var stepsTextScreen_4 = [
@@ -69,7 +98,9 @@ class Arrays {
         "e.g. 09/2017 or Sep 2017",
         "To:",
         "Still working? Just enter the start date and click\n“Present”.",
-        "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional."
+        "💡 If the date matters, be sure to include both the month\nand year.\nKeep the same date format throughout your resume for \nconsistency.\nIncluding the month is optional.",
+        "Provide your job responsibilities below:",
+        "When outlining your duties, avoid personal pronouns like “I,” “me,” or “my.” Emphasize your contributions with impactful action verbs (e.g., “managed,” “executed,” “developed”). Where relevant, include numbers to highlight results (e.g., “boosted sales by 25%”). Use bullet points and keep your sentences clear and concise."
 ]
     static var stepsTextScreen_5 = [
         "Professional Summary", "Your summary sits near the top of your resume, typically just below your contact details. It should briefly highlight your career direction or goals. Think of it as a quick headline that grabs attention and shows how you align with the role you're applying for.", "Write with AI", "You have 3 AI generations remaining in your free trial.", "Provide a brief overview of the key aspects and significant highlights of your experience below:", "Suggested Highlights"
@@ -83,4 +114,30 @@ class Arrays {
     static var stepsTextScreen_8 = [
         ""
         ]
+    
+    static var additionalHardSkillsArray = [
+        AdditionalPoint(name: "Data Analysis"),
+        AdditionalPoint(name: "Project Management"),
+        AdditionalPoint(name: "UX/UI Design"),
+        AdditionalPoint(name: "Digital Marketing"),
+        AdditionalPoint(name: "SEO Optimization"),
+        AdditionalPoint(name: "Software Development"),
+        AdditionalPoint(name: "CRM Systems (e.g., Salesforce, HubSpot)"),
+        AdditionalPoint(name: "Financial Reporting"),
+        AdditionalPoint(name: "Python / Java / JavaScript"),
+        AdditionalPoint(name: "SQL & Database Management"),
+        AdditionalPoint(name: "Microsoft Excel (Advanced)")
+    ]
+    static var additionalSoftSkillsArray = [
+        AdditionalPoint(name: "Problem-Solving"),
+        AdditionalPoint(name: "Critical Thinking"),
+        AdditionalPoint(name: "Communication"),
+        AdditionalPoint(name: "Leadership"),
+        AdditionalPoint(name: "Team Collaboration"),
+        AdditionalPoint(name: "Time Management"),
+        AdditionalPoint(name: "Adaptability"),
+        AdditionalPoint(name: "Conflict Resolution"),
+        AdditionalPoint(name: "Creativity")
+       
+    ]
 }

@@ -21,6 +21,8 @@ struct NewWork: View {
     @Binding var companiLocation: String
     @Binding var isCurentlyWork: Bool
     @Binding var editingWorkIndex: Int?
+    @Binding var showingResponsibilities: Bool
+    @Binding var currentWorkIndex: Int?
     
     func saveWorkData() {
         let newWork = WorkData()
@@ -29,7 +31,12 @@ struct NewWork: View {
         newWork.whenStart = whenStart
         newWork.whenFinished = whenFinished
         newWork.companiLocation = companiLocation
+        newWork.isCurentlyWork = isCurentlyWork
         formData.works.append(newWork)
+        
+        // Переход к Responsibilities для этой работы
+        currentWorkIndex = formData.works.count - 1
+        showingResponsibilities = true
     }
     
     var body: some View {
@@ -180,7 +187,7 @@ struct NewWork: View {
 
 #Preview {
     let testFormData = SurveyFormData()
-    // Оставляем массив пустым для тестирования NewEducation
+    // Оставляем массив пустым для тестирования NewWork
     return NewWork(
         formData: testFormData,
         companyName: .constant(""),
@@ -189,7 +196,9 @@ struct NewWork: View {
         whenFinished: .constant(""),
         companiLocation: .constant(""),
         isCurentlyWork: .constant(false),
-        editingWorkIndex: .constant(nil)
+        editingWorkIndex: .constant(nil),
+        showingResponsibilities: .constant(false),
+        currentWorkIndex: .constant(nil)
     )
 }
 

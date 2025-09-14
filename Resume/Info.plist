@@ -4,6 +4,12 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>Ruda-SemiBold.ttf</string>
+		<string>Ruda-Regular.ttf</string>
+		<string>Ruda-Medium.ttf</string>
+		<string>Ruda-ExtraBold.ttf</string>
+		<string>Ruda-Bold.ttf</string>
+		<string>Ruda-Black.ttf</string>
 		<string>Figtree-SemiBold.ttf</string>
 		<string>Figtree-Black.ttf</string>
 		<string>Figtree-Medium.ttf</string>

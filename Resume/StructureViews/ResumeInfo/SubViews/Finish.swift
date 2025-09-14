@@ -18,8 +18,14 @@ struct Finish: View {
     
     // MARK: - PDF Management
     @StateObject private var pdfGenerator = PDF_1_Generator()
+    @StateObject private var pdf2Generator = PDF_2_Generator()
+    @StateObject private var pdf3Generator = PDF_3_Generator()
     @State private var pdfThumbnailImage: UIImage?
+    @State private var pdf2ThumbnailImage: UIImage?
+    @State private var pdf3ThumbnailImage: UIImage?
     @State private var showingPDFView = false
+    @State private var showingPDF2View = false
+    @State private var showingPDF3View = false
     
     // MARK: - Photo Management
     @State private var profilePhoto: UIImage?
@@ -101,6 +107,14 @@ struct Finish: View {
         }
         .sheet(isPresented: $showingPDFView) {
             PDFPreviewView(formData: formData, userPhoto: formData.photos.first?.image)
+                .id(photoUpdateID) // Принудительно пересоздаем view при изменении фото
+        }
+        .sheet(isPresented: $showingPDF2View) {
+            PDFPreview2View(formData: formData, userPhoto: formData.photos.first?.image)
+                .id(photoUpdateID) // Принудительно пересоздаем view при изменении фото
+        }
+        .sheet(isPresented: $showingPDF3View) {
+            PDFPreview3View(formData: formData, userPhoto: formData.photos.first?.image)
                 .id(photoUpdateID) // Принудительно пересоздаем view при изменении фото
         }
         .sheet(isPresented: $showingPhotoPicker) {
@@ -484,22 +498,53 @@ extension Finish {
      * Генерирует миниатюру PDF документа
      */
     private func generatePDFThumbnail() {
-
         DispatchQueue.global(qos: .userInitiated).async {
-            guard let pdfData = pdfGenerator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image),
-                  let pdfDocument = PDFDocument(data: pdfData),
-                  let firstPage = pdfDocument.page(at: 0) else {
-                print("❌ Не удалось создать PDF или получить первую страницу")
-                return
+            // Генерируем миниатюру для PDF_1
+            if let pdfData = pdfGenerator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image),
+               let pdfDocument = PDFDocument(data: pdfData),
+               let firstPage = pdfDocument.page(at: 0) {
+                
+                let thumbnailSize = CGSize(width: 200, height: 283) // Соотношение A4
+                let thumbnail = firstPage.thumbnail(of: thumbnailSize, for: .mediaBox)
+                
+                DispatchQueue.main.async {
+                    self.pdfThumbnailImage = thumbnail
+                    print("✅ PDF_1 миниатюра создана успешно")
+                }
+            } else {
+                print("❌ Не удалось создать PDF_1 миниатюру")
             }
             
-            // Создаем миниатюру с нужным размером
-            let thumbnailSize = CGSize(width: 200, height: 283) // Соотношение A4
-            let thumbnail = firstPage.thumbnail(of: thumbnailSize, for: .mediaBox)
+            // Генерируем миниатюру для PDF_2
+            if let pdf2Data = pdf2Generator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image),
+               let pdf2Document = PDFDocument(data: pdf2Data),
+               let firstPage2 = pdf2Document.page(at: 0) {
+                
+                let thumbnailSize = CGSize(width: 200, height: 283) // Соотношение A4
+                let thumbnail2 = firstPage2.thumbnail(of: thumbnailSize, for: .mediaBox)
+                
+                DispatchQueue.main.async {
+                    self.pdf2ThumbnailImage = thumbnail2
+                    print("✅ PDF_2 миниатюра создана успешно")
+                }
+            } else {
+                print("❌ Не удалось создать PDF_2 миниатюру")
+            }
             
-            DispatchQueue.main.async {
-                self.pdfThumbnailImage = thumbnail
-                print("✅ PDF миниатюра создана успешно")
+            // Generate thumbnail for PDF_3
+            if let pdf3Data = pdf3Generator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image),
+               let pdf3Document = PDFDocument(data: pdf3Data),
+               let firstPage3 = pdf3Document.page(at: 0) {
+                
+                let thumbnailSize = CGSize(width: 200, height: 283) // Соотношение A4
+                let thumbnail3 = firstPage3.thumbnail(of: thumbnailSize, for: .mediaBox)
+                
+                DispatchQueue.main.async {
+                    self.pdf3ThumbnailImage = thumbnail3
+                    print("✅ PDF_3 миниатюра создана успешно")
+                }
+            } else {
+                print("❌ Не удалось создать PDF_3 миниатюру")
             }
         }
     }
@@ -509,76 +554,173 @@ extension Finish {
      */
     @ViewBuilder
     private func PDFThumbnailView() -> some View {
-        VStack(alignment: .leading, spacing: screenHeight*0.015) {
-            Text("Your Resume")
-                .font(Font.custom("Figtree-Bold", size: screenHeight*0.025))
-                .foregroundStyle(Color.black)
+        VStack(alignment: .leading, spacing: screenHeight*0.02) {
             
-            Button(action: {
-                // Убеждаемся что все данные сохранены перед открытием PDF
-                surveyManager.saveDraft()
-                surveyManager.forceReloadFromCoreData()
-                showingPDFView = true
-                print("📄 Открываем полный просмотр PDF")
-            }) {
-                ZStack {
-                    // Фон для миниатюры
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color.white)
-                        .frame(width: screenWidth*0.5, height: screenWidth*0.7) // A4 пропорции
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                    
-                    if let thumbnail = pdfThumbnailImage {
-                        // Отображаем реальную миниатюру PDF
-                        Image(uiImage: thumbnail)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: screenWidth*0.5, height: screenWidth*0.7)
-                            .clipShape(RoundedRectangle(cornerRadius: 15))
-                    } else {
-                        // Placeholder пока миниатюра загружается
-                        VStack(spacing: 10) {
-                            ProgressView()
-                                .scaleEffect(1.2)
-                            
-                            Text("Generating Preview...")
+            
+            VStack(spacing: screenHeight*0.03) {
+                // Верхний ряд: Template 1 и Template 2
+                HStack(spacing: screenWidth*0.05) {
+                    // Template 1
+                    VStack(spacing: screenHeight*0.01) {
+                        Button(action: {
+                            // Убеждаемся что все данные сохранены перед открытием PDF
+                            surveyManager.saveDraft()
+                            surveyManager.forceReloadFromCoreData()
+                            showingPDFView = true
+                            print("📄 Открываем полный просмотр PDF Template 1")
+                        }) {
+                            ZStack {
+                                // Фон для миниатюры
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(Color.white)
+                                    .frame(width: screenWidth*0.4, height: screenWidth*0.56) // A4 пропорции
+                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                                
+                                if let thumbnail = pdfThumbnailImage {
+                                    // Отображаем реальную миниатюру PDF
+                                    Image(uiImage: thumbnail)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: screenWidth*0.4, height: screenWidth*0.56)
+                                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                                } else {
+                                    // Placeholder пока миниатюра загружается
+                                    VStack(spacing: 10) {
+                                        ProgressView()
+                                            .scaleEffect(1.0)
+                                        
+                                        Text("Generating...")
+                                            .font(Font.custom("Figtree-Regular", size: screenHeight*0.014))
+                                            .foregroundStyle(Color.gray)
+                                    }
+                                }
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Download Button
+                        HStack {
+                            Image(.downloadIcon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: screenHeight*0.025)
+                            Text("Download PDF")
                                 .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
                                 .foregroundStyle(Color.gray)
                         }
+                        .frame(width: screenWidth*0.4)
                     }
                     
-                    // Overlay с иконкой просмотра
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Image(systemName: "eye.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                                .background(
-                                    Circle()
-                                        .fill(Color.blue.opacity(0.8))
-                                        .frame(width: 35, height: 35)
-                                )
-                                .padding(10)
+                    // Template 2
+                    VStack(spacing: screenHeight*0.01) {
+                        Button(action: {
+                            // Убеждаемся что все данные сохранены перед открытием PDF
+                            surveyManager.saveDraft()
+                            surveyManager.forceReloadFromCoreData()
+                            showingPDF2View = true
+                            print("📄 Открываем полный просмотр PDF Template 2")
+                        }) {
+                            ZStack {
+                                // Фон для миниатюры
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(Color.white)
+                                    .frame(width: screenWidth*0.4, height: screenWidth*0.56) // A4 пропорции
+                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                                
+                                if let thumbnail = pdf2ThumbnailImage {
+                                    // Отображаем реальную миниатюру PDF
+                                    Image(uiImage: thumbnail)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: screenWidth*0.4, height: screenWidth*0.56)
+                                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                                } else {
+                                    // Placeholder пока миниатюра загружается
+                                    VStack(spacing: 10) {
+                                        ProgressView()
+                                            .scaleEffect(1.0)
+                                        
+                                        Text("Generating...")
+                                            .font(Font.custom("Figtree-Regular", size: screenHeight*0.014))
+                                            .foregroundStyle(Color.gray)
+                                    }
+                                }
+                            }
                         }
-                        Spacer()
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Download Button
+                        HStack {
+                            Image(.downloadIcon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: screenHeight*0.025)
+                            Text("Download PDF")
+                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                .foregroundStyle(Color.gray)
+                        }
+                        .frame(width: screenWidth*0.4)
                     }
                 }
+                
+                // Нижний ряд: Template 3
+                HStack(spacing: screenWidth*0.05) {
+                    // Template 3
+                    VStack(spacing: screenHeight*0.01) {
+                        Button(action: {
+                            // Убеждаемся что все данные сохранены перед открытием PDF
+                            surveyManager.saveDraft()
+                            surveyManager.forceReloadFromCoreData()
+                            showingPDF3View = true
+                            print("📄 Открываем полный просмотр PDF Template 3")
+                        }) {
+                            ZStack {
+                                // Фон для миниатюры
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(Color.white)
+                                    .frame(width: screenWidth*0.4, height: screenWidth*0.56) // A4 пропорции
+                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                                
+                                if let thumbnail = pdf3ThumbnailImage {
+                                    // Отображаем реальную миниатюру PDF
+                                    Image(uiImage: thumbnail)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: screenWidth*0.4, height: screenWidth*0.56)
+                                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                                } else {
+                                    // Placeholder пока миниатюра загружается
+                                    VStack(spacing: 10) {
+                                        ProgressView()
+                                            .scaleEffect(1.0)
+                                        
+                                        Text("Generating...")
+                                            .font(Font.custom("Figtree-Regular", size: screenHeight*0.014))
+                                            .foregroundStyle(Color.gray)
+                                    }
+                                }
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        HStack {
+                            Image(.downloadIcon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: screenHeight*0.025)
+                            Text("Download PDF")
+                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                .foregroundStyle(Color.gray)
+                        }
+                        .frame(width: screenWidth*0.4)
+                    }
+                    
+                    Spacer() // Пустое место справа от Template 3
+                }
             }
-            .buttonStyle(PlainButtonStyle())
-            
-            // Описание
-            HStack {
-                Image(systemName: "doc.text")
-                    .foregroundColor(.blue)
-                Text("Tap to view full PDF")
-                    .font(Font.custom("Figtree-Regular", size: screenHeight*0.018))
-                    .foregroundStyle(Color.gray)
-            }
-            .padding(.top, screenHeight*0.01)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, screenWidth*0.1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, screenWidth*0.05)
     }
+    
 }
-

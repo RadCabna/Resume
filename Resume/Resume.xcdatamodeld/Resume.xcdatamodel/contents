@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24E263" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Education" representedClassName="Education" syncable="YES" codeGenerationType="class">
+        <attribute name="educationalDetails" optional="YES" attributeType="String"/>
         <attribute name="isCurrentlyStudying" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="schoolName" optional="YES" attributeType="String"/>
         <attribute name="whenFinished" optional="YES" attributeType="String"/>
@@ -8,6 +9,7 @@
         <relationship name="person" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Person" inverseName="education" inverseEntity="Person"/>
     </entity>
     <entity name="Person" representedClassName="Person" syncable="YES" codeGenerationType="class">
+        <attribute name="additionalSkillsData" optional="YES" attributeType="Binary"/>
         <attribute name="address" optional="YES" attributeType="String"/>
         <attribute name="adress_1" optional="YES" attributeType="String"/>
         <attribute name="completedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -40,6 +42,7 @@
         <attribute name="companiLocation" optional="YES" attributeType="String"/>
         <attribute name="companyName" optional="YES" attributeType="String"/>
         <attribute name="isCurentlyWork" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="responsibilities" optional="YES" attributeType="String"/>
         <attribute name="workAt" optional="YES" attributeType="String"/>
         <attribute name="workTo" optional="YES" attributeType="String"/>
         <attribute name="yourPosition" optional="YES" attributeType="String"/>

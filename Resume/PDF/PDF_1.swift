@@ -30,8 +30,8 @@ class PDF_1_Generator: ObservableObject {
         static let surnameFont = UIFont(name: "Figtree-ExtraBold", size: 150) ?? UIFont.boldSystemFont(ofSize: 28)
         static let positionFont = UIFont(name: "Figtree-Medium", size: 80) ?? UIFont.systemFont(ofSize: 16)
         static let sectionTitleFont = UIFont(name: "Figtree-Bold", size: 70) ?? UIFont.systemFont(ofSize: 18, weight: .medium)
-        static let contentFont = UIFont(name: "Figtree-Regular", size: 50) ?? UIFont.systemFont(ofSize: 12)
-        static let smallFont = UIFont(name: "Figtree-Regular", size: 48) ?? UIFont.systemFont(ofSize: 10)
+        static let contentFont = UIFont(name: "Figtree-Regular", size: 36) ?? UIFont.systemFont(ofSize: 12)
+        static let smallFont = UIFont(name: "Figtree-Regular", size: 36) ?? UIFont.systemFont(ofSize: 10)
         static let infoFont = UIFont(name: "Figtree-Medium", size: 40) ?? UIFont.systemFont(ofSize: 10)
         static let summaryFont = UIFont(name: "Figtree-Regular", size: 36) ?? UIFont.systemFont(ofSize: 10)
     }
@@ -369,14 +369,7 @@ class PDF_1_Generator: ObservableObject {
         }
     }
     
-    private func drawEducationInfo(formData: SurveyFormData, in context: CGContext) {
-        
-        let rect = CGRect(x: rectangleCoordinates[3].0, y: rectangleCoordinates[3].1, width: rectangleWidth, height: rectangleHeight)
-        
-        // Начальная позиция для текста с отступами
-        var currentY = rect.minY + LayoutConfig.nameTopMargin
-        let textX = rect.minX + LayoutConfig.nameLeftMargin
-    }
+  
     
     // MARK: - Contact Info Drawing
     /**
@@ -388,7 +381,7 @@ class PDF_1_Generator: ObservableObject {
         let rect3 = CGRect(x: rectangleCoordinates[4].0, y: rectangleCoordinates[4].1, width: rectangleWidth, height: rectangleHeight)
         
         var currentY = rect3.minY + LayoutConfig.sectionTopMargin + 80
-        let textX = rect3.minX + LayoutConfig.sectionLeftMargin + 100
+        let textX = rect3.minX + LayoutConfig.nameLeftMargin
         
         // Заголовок секции
         let titleAttributes: [NSAttributedString.Key: Any] = [
@@ -511,18 +504,7 @@ class PDF_1_Generator: ObservableObject {
         
         // Проходим по всем образованиям
         for (index, education) in formData.educations.enumerated() {
-            
-            // 🔵 РИСУЕМ КРУЖОК
-            let circleY = currentY + (FontConfig.smallFont.lineHeight / 2) - circleRadius
-            let circleRect = CGRect(x: circleX - circleRadius, y: circleY, width: circleRadius * 2, height: circleRadius * 2)
-            
-            context.setFillColor(circleColor.cgColor)
-            context.fillEllipse(in: circleRect)
-            
-            // Добавляем Y-координату в массив для линий
-            circleYPositions.append(circleY + circleRadius) // Центр кружка
-            
-            print("⚪ Кружок #\(index + 1) отрисован в позиции (\(circleX), \(circleY))")
+            let blockStartY = currentY // Запоминаем начало блока для отладки
             
             // Период обучения
             let periodText = education.isCurrentlyStudying ?
@@ -530,14 +512,53 @@ class PDF_1_Generator: ObservableObject {
                 "\(extractYear(from: education.whenStart)) - \(extractYear(from: education.whenFinished))"
             let periodString = NSAttributedString(string: periodText, attributes: periodAttributes)
             periodString.draw(at: CGPoint(x: contentX, y: currentY))
+            
+            // 🔵 РИСУЕМ КРУЖОК СТРОГО НАПРОТИВ ДАТЫ
+            let periodCenterY = currentY + (periodString.size().height / 2) // Центр текста периода
+            let circleY = periodCenterY - circleRadius // Позиция кружка чтобы его центр совпал с центром текста
+            let circleRect = CGRect(x: circleX - circleRadius, y: circleY, width: circleRadius * 2, height: circleRadius * 2)
+            
+            context.setFillColor(circleColor.cgColor)
+            context.fillEllipse(in: circleRect)
+            
+            // Добавляем Y-координату в массив для линий (используем центр кружка)
+            circleYPositions.append(circleY + circleRadius)
+            
+            print("📅 Период обучения '\(periodText)' отрисован в позиции (\(contentX), \(currentY))")
+            print("⚪ Кружок #\(index + 1) отрисован напротив периода в позиции (\(circleX), \(circleY)), центр Y: \(periodCenterY)")
+            
             currentY += periodString.size().height + LayoutConfig.smallSpacing
-            print("📅 Период обучения '\(periodText)' отрисован в позиции (\(contentX), \(currentY - periodString.size().height))")
             
             // Название учебного заведения
             let schoolString = NSAttributedString(string: education.schoolName.uppercased(), attributes: schoolNameAttributes)
             schoolString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += schoolString.size().height + LayoutConfig.largeSpacing + 100
+            currentY += schoolString.size().height + LayoutConfig.smallSpacing
             print("🏫 Образование #\(index + 1): '\(education.schoolName)' отрисовано в позиции (\(contentX), \(currentY - schoolString.size().height))")
+            
+            // Educational Details (детали обучения)
+            if !education.educationalDetails.trimmingCharacters(in: .whitespaces).isEmpty {
+                let educationalDetailsAttributes: [NSAttributedString.Key: Any] = [
+                    .font: FontConfig.smallFont,
+                    .foregroundColor: ColorConfig.contentColor
+                ]
+                
+                // Ограничиваем ширину до 700 пикселей
+                let maxWidth: CGFloat = 700
+                let educationalDetailsRect = CGRect(x: contentX, y: currentY, width: maxWidth, height: CGFloat.greatestFiniteMagnitude)
+                
+                let educationalDetailsString = NSAttributedString(string: education.educationalDetails, attributes: educationalDetailsAttributes)
+                let boundingRect = educationalDetailsString.boundingRect(with: CGSize(width: maxWidth, height: CGFloat.greatestFiniteMagnitude), 
+                                                                       options: [.usesLineFragmentOrigin, .usesFontLeading], 
+                                                                       context: nil)
+                
+                // Отрисовываем educational details
+                educationalDetailsString.draw(in: educationalDetailsRect)
+                currentY += boundingRect.height + 100 // Ровно 100 пикселей между блоками
+                print("🎓 Educational Details отрисованы в позиции (\(contentX), \(educationalDetailsRect.minY)) размером \(boundingRect.width)x\(boundingRect.height)")
+            } else {
+                // Если нет educational details, добавляем ровно 100 пикселей
+                currentY += 100
+            }
         }
         
         // 📏 РИСУЕМ СОЕДИНИТЕЛЬНЫЕ ЛИНИИ (если больше одного образования)
@@ -565,56 +586,100 @@ class PDF_1_Generator: ObservableObject {
      * Каждая работа отображается отдельным блоком
      */
     private func drawWorkExperience(formData: SurveyFormData, in context: CGContext) {
-        // Позиция пятого прямоугольника (левый нижний)
-        let rect5 =  CGRect(x: rectangleCoordinates[5].0, y: rectangleCoordinates[5].1, width: rectangleWidth, height: rectangleHeight)
+        // Позиция правого нижнего прямоугольника (индекс 5)
+        let rect5 = CGRect(x: rectangleCoordinates[5].0, y: rectangleCoordinates[5].1, width: rectangleWidthArray[5], height: rectangleHeightArray[5])
         
-        // Начальная позиция для контента
-        var currentY = rect5.minY + LayoutConfig.sectionTopMargin
-        let textX = rect5.minX + LayoutConfig.sectionLeftMargin
+        // Начальная позиция для контента (такие же отступы как в Education)
+        var currentY = rect5.minY + LayoutConfig.nameTopMargin
+        let textX = rect5.minX + LayoutConfig.nameLeftMargin
         
-        // Заголовок секции
+        // Заголовок секции - БЕЛЫЙ цвет, как в Education
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.sectionTitleFont,
-            .foregroundColor: ColorConfig.sectionTitleColor
+            .foregroundColor: UIColor.white  // БЕЛЫЙ цвет
         ]
-        let titleString = NSAttributedString(string: "Work Experience", attributes: titleAttributes)
+        let titleString = NSAttributedString(string: "WORK EXPERIENCE", attributes: titleAttributes)
         titleString.draw(at: CGPoint(x: textX, y: currentY))
-        currentY += titleString.size().height + LayoutConfig.largeSpacing
-        print("💼 Заголовок 'Work Experience' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
+        currentY += titleString.size().height + LayoutConfig.largeSpacing + 50
+        print("💼 Заголовок 'WORK EXPERIENCE' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
         
-        // Контент - список работ
-        let contentX = textX + LayoutConfig.contentLeftIndent
+        // Настройки шрифтов
+        let periodAttributes: [NSAttributedString.Key: Any] = [
+            .font: FontConfig.smallFont,
+            .foregroundColor: ColorConfig.periodColor  // Тот же цвет что и в Education
+        ]
         let companyNameAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.contentFont,
-            .foregroundColor: ColorConfig.contentColor
+            .foregroundColor: UIColor.white  // БЕЛЫЙ цвет
         ]
-        let positionAttributes: [NSAttributedString.Key: Any] = [
+        let responsibilitiesAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.smallFont,
-            .foregroundColor: ColorConfig.contentColor
+            .foregroundColor: UIColor.white  // БЕЛЫЙ цвет
         ]
         
-        // Проходим по всем работам
+        // Размеры для размещения в 2 колонки
+        let contentX = textX + LayoutConfig.contentLeftIndent
+        let columnWidth: CGFloat = 700  // Ширина колонки
+        let columnSpacing: CGFloat = 50 // Отступ между колонками
+        let rightColumnX = contentX + columnWidth + columnSpacing
+        
+        // Позиции для размещения
+        var leftColumnY = currentY
+        var rightColumnY = currentY
+        
+        // Проходим по всем работам и размещаем их по правилу
         for (index, work) in formData.works.enumerated() {
-            // Название компании
-            let companyString = NSAttributedString(string: work.companyName, attributes: companyNameAttributes)
-            companyString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += companyString.size().height + LayoutConfig.smallSpacing
-            print("🏢 Работа #\(index + 1): '\(work.companyName)' отрисована в позиции (\(contentX), \(currentY - companyString.size().height))")
+            let workPosition = index % 4 // 0,1,2,3 повторяется
+            let useLeftColumn = (workPosition == 0 || workPosition == 2) // 1-я и 3-я в левой колонке
+            let useRightColumn = (workPosition == 1 || workPosition == 3) // 2-я и 4-я в правой колонке
             
-            // Должность
-            let positionString = NSAttributedString(string: work.position, attributes: positionAttributes)
-            positionString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += positionString.size().height + LayoutConfig.smallSpacing
-            print("💼 Должность '\(work.position)' отрисована в позиции (\(contentX), \(currentY - positionString.size().height))")
+            // Определяем X и Y для текущей работы
+            let workX = useLeftColumn ? contentX : rightColumnX
+            var workY = useLeftColumn ? leftColumnY : rightColumnY
             
-            // Период работы
+            print("💼 Размещение работы #\(index + 1) '\(work.companyName)' в позиции (\(workX), \(workY)), колонка: \(useLeftColumn ? "левая" : "правая")")
+            
+            let workStartY = workY // Запоминаем начальную Y для данной работы
+            
+            // 1. Дата (период работы) - ПЕРВЫМ
             let periodText = work.isCurentlyWork ? 
-                "\(work.whenStart) - Present" : 
-                "\(work.whenStart) - \(work.whenFinished)"
-            let periodString = NSAttributedString(string: periodText, attributes: positionAttributes)
-            periodString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += periodString.size().height + LayoutConfig.largeSpacing
-            print("📅 Период работы '\(periodText)' отрисован в позиции (\(contentX), \(currentY - periodString.size().height))")
+                "\(extractYear(from: work.whenStart)) - Present" : 
+                "\(extractYear(from: work.whenStart)) - \(extractYear(from: work.whenFinished))"
+            let periodString = NSAttributedString(string: periodText, attributes: periodAttributes)
+            periodString.draw(at: CGPoint(x: workX, y: workY))
+            workY += periodString.size().height + LayoutConfig.smallSpacing
+            print("📅 Период работы '\(periodText)' отрисован в позиции (\(workX), \(workY - periodString.size().height))")
+            
+            // 2. Название учреждения (компании) - БЕЛЫМ цветом
+            let companyString = NSAttributedString(string: work.companyName.uppercased(), attributes: companyNameAttributes)
+            companyString.draw(at: CGPoint(x: workX, y: workY))
+            workY += companyString.size().height + LayoutConfig.smallSpacing
+            print("🏢 Компания '\(work.companyName)' отрисована в позиции (\(workX), \(workY - companyString.size().height))")
+            
+            // 3. Responsibilities (должностные обязанности) - БЕЛЫМ цветом
+            if !work.responsibilities.trimmingCharacters(in: .whitespaces).isEmpty {
+                let maxWidth: CGFloat = columnWidth - 50 // Немного меньше ширины колонки
+                let responsibilitiesRect = CGRect(x: workX, y: workY, width: maxWidth, height: CGFloat.greatestFiniteMagnitude)
+                
+                let responsibilitiesString = NSAttributedString(string: work.responsibilities, attributes: responsibilitiesAttributes)
+                let boundingRect = responsibilitiesString.boundingRect(with: CGSize(width: maxWidth, height: CGFloat.greatestFiniteMagnitude), 
+                                                                     options: [.usesLineFragmentOrigin, .usesFontLeading], 
+                                                                     context: nil)
+                
+                // Отрисовываем responsibilities
+                responsibilitiesString.draw(in: responsibilitiesRect)
+                workY += boundingRect.height + 50 // Отступ между работами
+                print("💼 Responsibilities отрисованы в позиции (\(workX), \(responsibilitiesRect.minY)) размером \(boundingRect.width)x\(boundingRect.height)")
+            } else {
+                workY += 50 // Минимальный отступ если нет responsibilities
+            }
+            
+            // Обновляем позицию для следующей работы в этой колонке
+            if useLeftColumn {
+                leftColumnY = workY + 50 // Дополнительный отступ между работами
+            } else {
+                rightColumnY = workY + 50
+            }
         }
     }
     
@@ -624,41 +689,76 @@ class PDF_1_Generator: ObservableObject {
      * Может включать навыки, достижения, хобби и т.д.
      */
     private func drawAdditionalInfo(formData: SurveyFormData, in context: CGContext) {
-        // Позиция шестого прямоугольника (правый нижний)
-        let rect6 =  CGRect(x: rectangleCoordinates[2].0, y: rectangleCoordinates[2].1, width: rectangleWidth, height: rectangleHeight)
-        // Начальная позиция для контента
-        var currentY = rect6.minY + LayoutConfig.sectionTopMargin
-        let textX = rect6.minX + LayoutConfig.sectionLeftMargin
+        // Позиция правого среднего прямоугольника (индекс 2) - прежнее положение
+        let rect6 = CGRect(x: rectangleCoordinates[2].0, y: rectangleCoordinates[2].1, width: rectangleWidthArray[2], height: rectangleHeightArray[2])
+        
+        // Начальная позиция для текста с отступами (как в Education)
+        var currentY = rect6.minY + LayoutConfig.nameTopMargin
+        let textX = rect6.minX + LayoutConfig.nameLeftMargin - 50
         
         // Заголовок секции
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.sectionTitleFont,
             .foregroundColor: ColorConfig.sectionTitleColor
         ]
-        let titleString = NSAttributedString(string: "Additional Info", attributes: titleAttributes)
+        let titleString = NSAttributedString(string: "SKILLS", attributes: titleAttributes)
         titleString.draw(at: CGPoint(x: textX, y: currentY))
-        currentY += titleString.size().height + LayoutConfig.largeSpacing
-        print("ℹ️ Заголовок 'Additional Info' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
+        currentY += titleString.size().height + LayoutConfig.largeSpacing + 50
+        print("🎯 Заголовок 'SKILLS' отрисован в позиции (\(textX), \(currentY - titleString.size().height))")
         
-        // Контент - дополнительная информация
-        let contentX = textX + LayoutConfig.contentLeftIndent
+        // Контент - список навыков (как в Education)
+        let contentX = textX + LayoutConfig.contentLeftIndent + 50
         let contentAttributes: [NSAttributedString.Key: Any] = [
             .font: FontConfig.contentFont,
             .foregroundColor: ColorConfig.contentColor
         ]
         
-        // Пример дополнительной информации
-        let additionalInfo = [
-            "• Languages: English, Russian",
-            "• Skills: iOS Development",
-            "• Interests: Technology, Design"
-        ]
+        // Получаем все выбранные навыки в один массив
+        let selectedHardSkills = formData.additionalSkills.hardSkills.filter { $0.active }.map { $0.name }
+        let selectedSoftSkills = formData.additionalSkills.softSkills.filter { $0.active }.map { $0.name }
+        let allSelectedSkills = selectedHardSkills + selectedSoftSkills
         
-        for info in additionalInfo {
-            let infoString = NSAttributedString(string: info, attributes: contentAttributes)
-            infoString.draw(at: CGPoint(x: contentX, y: currentY))
-            currentY += infoString.size().height + LayoutConfig.mediumSpacing
-            print("📝 Дополнительная информация '\(info)' отрисована в позиции (\(contentX), \(currentY - infoString.size().height))")
+        // Размеры для иконки markOk и отступов
+        let iconSize: CGFloat = 40
+        let iconSpacing: CGFloat = 15
+        let skillSpacing: CGFloat = 30  // Отступ между навыками
+        
+        // Ширина доступного пространства для текста (учитываем границы прямоугольника)
+        let availableWidth = rect6.maxX - contentX - 50  // 50 - отступ от правого края
+        
+        // Отрисовываем все навыки в один список
+        if !allSelectedSkills.isEmpty {
+            for skill in allSelectedSkills {
+                // Рисуем текст навыка с переносом строк
+                let skillString = NSAttributedString(string: skill, attributes: contentAttributes)
+                
+                // Вычисляем размер текста с учетом переноса
+                let textRect = CGRect(x: contentX, y: currentY, width: availableWidth, height: CGFloat.greatestFiniteMagnitude)
+                let boundingRect = skillString.boundingRect(with: CGSize(width: availableWidth, height: CGFloat.greatestFiniteMagnitude),
+                                                          options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                          context: nil)
+                
+                // Рисуем иконку markOk по центру первой строки
+                if let markOkImage = UIImage(named: "markOk") {
+                    // Вычисляем высоту одной строки текста
+                    let singleLineHeight = skillString.size().height
+                    let iconY = currentY + (singleLineHeight / 2) - (iconSize / 2)  // Центрируем относительно первой строки
+                    let iconRect = CGRect(x: contentX - iconSize - iconSpacing, y: iconY, width: iconSize, height: iconSize)
+                    markOkImage.draw(in: iconRect)
+                }
+                
+                // Отрисовываем текст в ограниченной области
+                skillString.draw(in: textRect)
+                
+                // Обновляем позицию Y с учетом высоты текста и отступа
+                currentY += boundingRect.height + skillSpacing
+                print("✅ Skill '\(skill)' отрисован в позиции (\(contentX), \(currentY - boundingRect.height - skillSpacing)) размером \(boundingRect.width)x\(boundingRect.height)")
+            }
+        } else {
+            // Если ничего не выбрано, показываем сообщение
+            let noSkillsString = NSAttributedString(string: "No skills selected", attributes: contentAttributes)
+            noSkillsString.draw(at: CGPoint(x: contentX, y: currentY))
+            print("📝 Сообщение 'No skills selected' отрисовано в позиции (\(contentX), \(currentY))")
         }
     }
     

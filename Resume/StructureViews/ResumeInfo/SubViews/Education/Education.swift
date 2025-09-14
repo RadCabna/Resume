@@ -11,6 +11,7 @@ struct EducationView: View {
     @State private var stepNumber = 2
     @State private var stepsTextArray = Arrays.stepsTextArray
     @ObservedObject var formData: SurveyFormData
+    @ObservedObject var surveyManager: SurveyManager
     
     // Привязки к локальным переменным из MainView (для NewEducation)
     @Binding var schoolName: String
@@ -23,6 +24,10 @@ struct EducationView: View {
     @Binding var justSavedEducation: Bool
     @Binding var editingEducationIndex: Int?
     
+    // Состояния для навигации через EducationalDetails (Binding из MainView)
+    @Binding var showingEducationalDetails: Bool
+    @Binding var currentEducationIndex: Int?
+    
     var body: some View {
         ZStack {
             if showingNewEducation {
@@ -32,7 +37,16 @@ struct EducationView: View {
                     whenStart: $whenStart,
                     whenFinished: $whenFinished,
                     isCurrentlyStudying: $isCurrentlyStudying,
-                    editingEducationIndex: $editingEducationIndex
+                    editingEducationIndex: $editingEducationIndex,
+                    showingEducationalDetails: $showingEducationalDetails,
+                    currentEducationIndex: $currentEducationIndex
+                )
+            } else if showingEducationalDetails {
+                EducationalDetails(formData: formData,
+                                 currentEducationIndex: $currentEducationIndex,
+                                 showingEducationalDetails: $showingEducationalDetails,
+                                 showingNewEducation: $showingNewEducation,
+                                 surveyManager: surveyManager
                 )
             } else {
                 EducationList(
@@ -59,15 +73,21 @@ struct EducationView: View {
     education1.isCurrentlyStudying = false
     testFormData.educations = [education1]
     
+    let testSurveyManager = SurveyManager(context: PersistenceController.preview.container.viewContext)
+    testSurveyManager.formData = testFormData
+    
     return EducationView(
         formData: testFormData,
+        surveyManager: testSurveyManager,
         schoolName: .constant(""),
         whenStart: .constant(""),
         whenFinished: .constant(""),
         isCurrentlyStudying: .constant(false),
         showingNewEducation: .constant(true),
         justSavedEducation: .constant(false),
-        editingEducationIndex: .constant(nil)
+        editingEducationIndex: .constant(nil),
+        showingEducationalDetails: .constant(false),
+        currentEducationIndex: .constant(nil)
     )
 }
 

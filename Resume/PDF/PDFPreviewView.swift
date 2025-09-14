@@ -184,72 +184,7 @@ struct PDFPreviewView: View {
 }
 
 // MARK: - PDFKit Integration
-/**
- * UIViewRepresentable wrapper для PDFView из PDFKit
- * Позволяет отображать PDF в SwiftUI
- */
-struct PDFKitView: UIViewRepresentable {
-    
-    // MARK: - Properties
-    /// PDF данные для отображения
-    let data: Data
-    
-    // MARK: - UIViewRepresentable
-    /**
-     * Создает PDFView для отображения PDF документа
-     */
-    func makeUIView(context: Context) -> PDFView {
-        let pdfView = PDFView()
-        
-        // Настройки отображения
-        pdfView.autoScales = true  // Автоматическое масштабирование
-        pdfView.displayMode = .singlePage  // Отображение одной страницы
-        pdfView.displayDirection = .vertical  // Вертикальная прокрутка
-        
-        // Настройки качества
-        pdfView.interpolationQuality = .high
-        
-        // Включаем возможность выделения текста
-        pdfView.enableDataDetectors = true
-        
-        // Загружаем PDF документ
-        if let document = PDFDocument(data: data) {
-            pdfView.document = document
-            pdfView.go(to: document.page(at: 0)!)  // Переходим на первую страницу
-            
-            // Автоматически масштабируем для показа всей страницы
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
-                print("📏 PDF масштабирован для показа всей страницы, масштаб: \(pdfView.scaleFactor)")
-            }
-            
-            print("📄 PDF документ загружен в PDFView, страниц: \(document.pageCount)")
-        } else {
-            print("❌ Не удалось создать PDFDocument из данных")
-        }
-        
-        return pdfView
-    }
-    
-    /**
-     * Обновляет PDFView при изменении данных
-     */
-    func updateUIView(_ uiView: PDFView, context: Context) {
-        // Если данные изменились, перезагружаем документ
-        if let document = PDFDocument(data: data) {
-            uiView.document = document
-            uiView.go(to: document.page(at: 0)!)
-            
-            // Автоматически масштабируем для показа всей страницы
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                uiView.scaleFactor = uiView.scaleFactorForSizeToFit
-                print("📏 PDF обновлен и масштабирован, масштаб: \(uiView.scaleFactor)")
-            }
-            
-            print("🔄 PDF документ обновлен в PDFView")
-        }
-    }
-}
+// Используем универсальный PDFKitView из PDFKitView.swift
 
 // MARK: - Preview
 /**
@@ -302,6 +237,17 @@ struct PDFKitView: UIViewRepresentable {
     let summaryData = SummaryData()
     summaryData.summaryText = "Result-driven Project Manager with over 3 years of experience in leading cross-functional teams, delivering digital products, and ensuring on-time, on-budget execution. Skilled in Agile and Scrum methodologies, stakeholder communication, and risk management. Passionate about optimizing workflows and achieving business goals through clear planning and proactive leadership."
     testFormData.summaryData = summaryData
+    
+    // Добавляем тестовые навыки
+    testFormData.additionalSkills.hardSkills[0].active = true  // Data Analysis
+    testFormData.additionalSkills.hardSkills[1].active = true  // Project Management  
+    testFormData.additionalSkills.hardSkills[5].active = true  // Software Development
+    testFormData.additionalSkills.hardSkills[9].active = true  // Python / Java / JavaScript
+    
+    testFormData.additionalSkills.softSkills[0].active = true  // Problem-Solving
+    testFormData.additionalSkills.softSkills[2].active = true  // Communication
+    testFormData.additionalSkills.softSkills[3].active = true  // Leadership
+    testFormData.additionalSkills.softSkills[5].active = true  // Time Management
     
     return PDFPreviewView(formData: testFormData)
 } 

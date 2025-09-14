@@ -11,6 +11,7 @@ struct WorkView: View {
     @State private var stepNumber = 3
     @State private var stepsTextArray = Arrays.stepsTextArray
     @ObservedObject var formData: SurveyFormData
+    @ObservedObject var surveyManager: SurveyManager
     
     @Binding var companyName: String
     @Binding var position: String
@@ -22,6 +23,10 @@ struct WorkView: View {
     @Binding var justSavedWork: Bool
     @Binding var editingWorkIndex: Int?
     
+    // Состояния для навигации через Responsibilities (теперь Binding из MainView)
+    @Binding var showingResponsibilities: Bool
+    @Binding var currentWorkIndex: Int?
+    
     var body: some View {
         ZStack {
             if showingNewWork {
@@ -32,7 +37,16 @@ struct WorkView: View {
                         whenFinished: $whenFinished,
                         companiLocation: $companiLocation,
                         isCurentlyWork: $isCurentlyWork,
-                        editingWorkIndex: $editingWorkIndex
+                        editingWorkIndex: $editingWorkIndex,
+                        showingResponsibilities: $showingResponsibilities,
+                        currentWorkIndex: $currentWorkIndex
+                )
+            } else if showingResponsibilities {
+                Responsibilities(formData: formData,
+                               surveyManager: surveyManager,
+                               currentWorkIndex: $currentWorkIndex,
+                               showingResponsibilities: $showingResponsibilities,
+                               showingNewWork: $showingNewWork
                 )
             } else {
                 WorkList(formData: formData,
@@ -52,7 +66,9 @@ struct WorkView: View {
     work.whenStart = "10/2010"
     work.whenFinished = "10/2013"
     testFormData.works = [work, work]
-   return WorkView(formData: testFormData,
+    let testSurveyManager = SurveyManager(context: PersistenceController.preview.container.viewContext)
+    return WorkView(formData: testFormData,
+             surveyManager: testSurveyManager,
              companyName: .constant(""),
              position: .constant(""),
              whenStart: .constant(""),
@@ -61,6 +77,8 @@ struct WorkView: View {
              isCurentlyWork: .constant(false),
              showingNewWork: .constant(false),
              justSavedWork: .constant(false),
-             editingWorkIndex: .constant(nil)
+             editingWorkIndex: .constant(nil),
+             showingResponsibilities: .constant(false),
+             currentWorkIndex: .constant(nil)
     )
 }

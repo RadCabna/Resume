@@ -92,6 +92,9 @@ class SurveyManager: ObservableObject {
         
         // Загружаем photos
         loadPhotosFromDraft(draft)
+        
+        // Загружаем additional skills
+        loadAdditionalSkillsFromDraft(draft)
     }
     
     // Загружаем образования из CoreData в formData (оперативную память)
@@ -153,6 +156,166 @@ class SurveyManager: ObservableObject {
         print("🔄 Принудительно перезагружены все данные из CoreData")
     }
     
+    // Принудительная синхронизация конкретного образования с CoreData
+    func syncEducationWithCoreData(at index: Int) {
+        guard let draft = draftPerson,
+              index < formData.educations.count else { return }
+        
+        // Получаем образования из CoreData
+        let request: NSFetchRequest<Education> = Education.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        // Убираем сортировку, так как порядок может отличаться
+        
+        do {
+            let coreDataEducations = try viewContext.fetch(request)
+            let formDataEducation = formData.educations[index]
+            
+            // Ищем соответствующее образование по названию школы
+            if let matchingEducation = coreDataEducations.first(where: { $0.schoolName == formDataEducation.schoolName }) {
+                // Синхронизируем educationalDetails из CoreData
+                formDataEducation.educationalDetails = matchingEducation.educationalDetails ?? ""
+                
+                print("🔄 Синхронизировано образование \(formDataEducation.schoolName): educationalDetails='\(formDataEducation.educationalDetails)'")
+            } else {
+                print("⚠️ Не найдено соответствующее образование в CoreData для \(formDataEducation.schoolName)")
+            }
+        } catch {
+            print("❌ Ошибка синхронизации образования: \(error)")
+        }
+    }
+    
+    // MARK: - Additional Skills Methods
+    
+    // Переключение Hard Skill
+    func toggleHardSkill(at index: Int) {
+        guard index < formData.additionalSkills.hardSkills.count else { return }
+        formData.additionalSkills.hardSkills[index].active.toggle()
+        print("🎯 Hard Skill '\(formData.additionalSkills.hardSkills[index].name)' \(formData.additionalSkills.hardSkills[index].active ? "включен" : "выключен")")
+    }
+    
+    // Переключение Soft Skill
+    func toggleSoftSkill(at index: Int) {
+        guard index < formData.additionalSkills.softSkills.count else { return }
+        formData.additionalSkills.softSkills[index].active.toggle()
+        print("🎯 Soft Skill '\(formData.additionalSkills.softSkills[index].name)' \(formData.additionalSkills.softSkills[index].active ? "включен" : "выключен")")
+    }
+    
+    // Получение выбранных навыков для PDF
+    func getSelectedSkills() -> (hardSkills: [String], softSkills: [String]) {
+        let hardSkills = formData.additionalSkills.hardSkills
+            .filter { $0.active }
+            .map { $0.name }
+        
+        let softSkills = formData.additionalSkills.softSkills
+            .filter { $0.active }
+            .map { $0.name }
+        
+        return (hardSkills: hardSkills, softSkills: softSkills)
+    }
+    
+    // Сохранение конкретного образования в CoreData
+    func saveEducationToCoreData(at index: Int) {
+        guard let draft = draftPerson,
+              index < formData.educations.count else { 
+            print("❌ Невозможно сохранить образование: неверный индекс или нет draft")
+            return 
+        }
+        
+        let formDataEducation = formData.educations[index]
+        
+        // Получаем образования из CoreData
+        let request: NSFetchRequest<Education> = Education.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        
+        do {
+            let coreDataEducations = try viewContext.fetch(request)
+            
+            // Ищем соответствующее образование по названию школы
+            if let matchingEducation = coreDataEducations.first(where: { $0.schoolName == formDataEducation.schoolName }) {
+                // Обновляем существующее образование
+                matchingEducation.educationalDetails = formDataEducation.educationalDetails
+                
+                print("💾 Обновлено образование в CoreData: \(formDataEducation.schoolName)")
+                print("💾 Сохранены educationalDetails: '\(formDataEducation.educationalDetails)'")
+                
+                // Сохраняем контекст
+                try viewContext.save()
+                print("✅ CoreData успешно сохранено")
+            } else {
+                print("⚠️ Не найдено образование в CoreData для обновления: \(formDataEducation.schoolName)")
+            }
+        } catch {
+            print("❌ Ошибка сохранения образования в CoreData: \(error)")
+        }
+    }
+    
+    /**
+     * Синхронизирует данные о работе из CoreData в formData
+     */
+    func syncWorkWithCoreData(at index: Int) {
+        guard let draft = draftPerson,
+              index < formData.works.count else { return }
+        
+        // Получаем работы из CoreData
+        let request: NSFetchRequest<Work> = Work.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        
+        do {
+            let coreDataWorks = try viewContext.fetch(request)
+            let formDataWork = formData.works[index]
+            
+            // Ищем соответствующую работу по названию компании
+            if let matchingWork = coreDataWorks.first(where: { $0.companyName == formDataWork.companyName }) {
+                // Синхронизируем responsibilities из CoreData
+                formDataWork.responsibilities = matchingWork.responsibilities ?? ""
+                
+                print("🔄 Синхронизирована работа \(formDataWork.companyName): responsibilities='\(formDataWork.responsibilities)'")
+            } else {
+                print("⚠️ Не найдена соответствующая работа в CoreData для \(formDataWork.companyName)")
+            }
+        } catch {
+            print("❌ Ошибка синхронизации работы: \(error)")
+        }
+    }
+    
+    /**
+     * Сохраняет данные о работе из formData в CoreData
+     */
+    func saveWorkToCoreData(at index: Int) {
+        guard let draft = draftPerson,
+              index < formData.works.count else { 
+            print("❌ Невозможно сохранить работу: неверный индекс или нет draft")
+            return 
+        }
+        
+        let formDataWork = formData.works[index]
+        
+        // Получаем работы из CoreData
+        let request: NSFetchRequest<Work> = Work.fetchRequest()
+        request.predicate = NSPredicate(format: "person == %@", draft)
+        
+        do {
+            let coreDataWorks = try viewContext.fetch(request)
+            
+            // Ищем соответствующую работу по названию компании
+            if let matchingWork = coreDataWorks.first(where: { $0.companyName == formDataWork.companyName }) {
+                // Обновляем существующую работу
+                matchingWork.responsibilities = formDataWork.responsibilities
+                
+                print("💾 Обновлена работа в CoreData: \(formDataWork.companyName)")
+                print("💾 Сохранены responsibilities: '\(formDataWork.responsibilities)'")
+                
+                // Сохраняем контекст
+                try viewContext.save()
+                print("✅ CoreData успешно сохранено")
+            } else {
+                print("⚠️ Не найдена работа в CoreData для обновления: \(formDataWork.companyName)")
+            }
+        } catch {
+            print("❌ Ошибка сохранения работы в CoreData: \(error)")
+        }
+    }
+    
     // Сохраняем данные из formData в черновик CoreData
     func saveDraft() {
         guard let draft = draftPerson else { return }
@@ -175,6 +338,9 @@ class SurveyManager: ObservableObject {
         
         // Сохраняем summary в CoreData
         saveSummaryToDraft(draft)
+        
+        // Сохраняем additional skills в CoreData
+        saveAdditionalSkillsToDraft(draft)
         
         // Сохраняем photos в CoreData
         savePhotosToDraft(draft)
@@ -221,6 +387,7 @@ class SurveyManager: ObservableObject {
             education.schoolName = educationData.schoolName
             education.whenFinished = educationData.isCurrentlyStudying ? nil : educationData.whenFinished
             education.whenStart = educationData.whenStart
+            education.educationalDetails = educationData.educationalDetails
             education.person = person  // Устанавливаем связь
         }
         print("📚 Создано новых образований: \(formData.educations.count)")
@@ -263,6 +430,7 @@ class SurveyManager: ObservableObject {
             work.workAt = workData.whenStart
             work.workTo = workData.isCurentlyWork ? nil : workData.whenFinished
             work.companiLocation = workData.companiLocation
+            work.responsibilities = workData.responsibilities
             work.person = person  // Устанавливаем связь
         }
         print("💼 Создано новых работ: \(formData.works.count)")
@@ -308,6 +476,16 @@ class SurveyManager: ObservableObject {
     // MARK: - Методы для работы с Photos
     
     // Сохраняем photos в черновик
+    private func saveAdditionalSkillsToDraft(_ draft: Person) {
+        do {
+            let encoded = try JSONEncoder().encode(formData.additionalSkills)
+            draft.additionalSkillsData = encoded
+            print("🎯 Сохранены additional skills в CoreData")
+        } catch {
+            print("❌ Ошибка сохранения additional skills: \(error)")
+        }
+    }
+    
     private func savePhotosToDraft(_ draft: Person) {
         // 1. Удаляем старые фото
         deleteExistingPhotos(for: draft)
@@ -370,6 +548,22 @@ class SurveyManager: ObservableObject {
         } catch {
             print("❌ Ошибка загрузки фото: \(error)")
             formData.photos = []
+        }
+    }
+    
+    private func loadAdditionalSkillsFromDraft(_ draft: Person) {
+        if let data = draft.additionalSkillsData {
+            do {
+                let decoded = try JSONDecoder().decode(AdditionalSkillsData.self, from: data)
+                formData.additionalSkills = decoded
+                print("🎯 Загружены additional skills: Hard(\(decoded.hardSkills.filter{$0.active}.count)), Soft(\(decoded.softSkills.filter{$0.active}.count))")
+            } catch {
+                print("❌ Ошибка загрузки additional skills: \(error)")
+                formData.additionalSkills = AdditionalSkillsData()
+            }
+        } else {
+            formData.additionalSkills = AdditionalSkillsData()
+            print("📝 Созданы дефолтные additional skills")
         }
     }
     
@@ -533,6 +727,9 @@ class SurveyFormData: ObservableObject {
     
     // Photos
     @Published var photos: [PhotoData] = []
+    
+    // Additional Skills
+    @Published var additionalSkills = AdditionalSkillsData()
 }
 
 // MARK: - EducationData класс для временного хранения образования
@@ -542,6 +739,7 @@ class EducationData: ObservableObject, Identifiable {
     @Published var schoolName = ""
     @Published var whenFinished = ""
     @Published var whenStart = ""
+    @Published var educationalDetails = ""
     
     init() {}
     
@@ -551,6 +749,7 @@ class EducationData: ObservableObject, Identifiable {
         self.schoolName = education.schoolName ?? ""
         self.whenFinished = education.whenFinished ?? ""
         self.whenStart = education.whenStart ?? ""
+        self.educationalDetails = education.educationalDetails ?? ""
     }
     
     // Валидация данных
@@ -567,6 +766,7 @@ class WorkData : ObservableObject, Identifiable {
     @Published var whenFinished = ""
     @Published var companiLocation = ""
     @Published var isCurentlyWork = false
+    @Published var responsibilities = ""
     
     init() {}
     
@@ -577,6 +777,7 @@ class WorkData : ObservableObject, Identifiable {
         self.whenStart = work.workAt ?? ""
         self.whenFinished = work.workTo ?? ""
         self.companiLocation = work.companiLocation ?? ""
+        self.responsibilities = work.responsibilities ?? ""
     }
     
     // Валидация данных
@@ -625,6 +826,17 @@ class PhotoData: ObservableObject, Identifiable {
     // Валидация данных
     var isValid: Bool {
         return image != nil
+    }
+}
+
+// MARK: - Additional Skills Data
+struct AdditionalSkillsData: Codable {
+    var hardSkills: [AdditionalPoint]
+    var softSkills: [AdditionalPoint]
+    
+    init() {
+        self.hardSkills = Arrays.additionalHardSkillsArray
+        self.softSkills = Arrays.additionalSoftSkillsArray
     }
 }
 

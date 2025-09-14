@@ -18,6 +18,8 @@ struct NewEducation: View {
     @Binding var whenFinished: String
     @Binding var isCurrentlyStudying: Bool
     @Binding var editingEducationIndex: Int?
+    @Binding var showingEducationalDetails: Bool
+    @Binding var currentEducationIndex: Int?
     
     // Отслеживание клавиатуры
     @StateObject private var keyboardObserver = KeyboardObserver()
@@ -32,6 +34,10 @@ struct NewEducation: View {
         
         // Добавляем в массив
         formData.educations.append(newEducation)
+        
+        // Переход к EducationalDetails для этого образования
+        currentEducationIndex = formData.educations.count - 1
+        showingEducationalDetails = true
     }
     
     var body: some View {
@@ -138,6 +144,7 @@ struct NewEducation: View {
                 whenStart = education.whenStart
                 whenFinished = education.whenFinished
                 isCurrentlyStudying = education.isCurrentlyStudying
+                print("🔄 NewEducation: загружены данные для редактирования - \(education.schoolName), educationalDetails: '\(education.educationalDetails)'")
             }
         }
     }
@@ -152,7 +159,9 @@ struct NewEducation: View {
         whenStart: .constant(""),
         whenFinished: .constant(""),
         isCurrentlyStudying: .constant(false),
-        editingEducationIndex: .constant(nil)
+        editingEducationIndex: .constant(nil),
+        showingEducationalDetails: .constant(false),
+        currentEducationIndex: .constant(nil)
     )
 }
 
