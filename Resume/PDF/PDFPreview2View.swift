@@ -29,6 +29,14 @@ struct PDFPreview2View: View {
                 } else if let pdfDocument = pdfDocument {
                     PDFKitView(document: pdfDocument)
                         .edgesIgnoringSafeArea(.all)
+                        .toolbar {
+                            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                                // Кнопка обновления PDF
+                                Button(action: generatePDF) {
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                            }
+                        }
                 } else {
                     Text("Failed to generate PDF")
                         .foregroundColor(.red)
@@ -58,6 +66,37 @@ struct PDFPreview2View: View {
                     self.isLoading = false
                 }
             }
+        }
+    }
+    
+    /**
+     * Открывает системное меню для экспорта/отправки PDF
+     */
+    private func sharePDF() {
+        // Генерируем PDF для экспорта
+        let generator = PDF_2_Generator()
+        guard let pdfData = generator.generatePDF(formData: formData, userPhoto: userPhoto) else {
+            print("❌ Не удалось сгенерировать PDF для экспорта")
+            return
+        }
+        
+        let activityController = UIActivityViewController(
+            activityItems: [pdfData],
+            applicationActivities: nil
+        )
+        
+        // Для iPad - задаем источник popover
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first,
+           let rootViewController = window.rootViewController {
+            
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = window
+                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityController, animated: true)
         }
     }
 }

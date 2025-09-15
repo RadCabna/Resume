@@ -8,11 +8,13 @@
 import SwiftUI
 
 struct OnboardingView: View {
+    @EnvironmentObject var coordinator: Coordinator
     @State private var viewNumber = 0
     @State private var bgNumber = 0
     @State private var onboardingBG = Arrays.onboardingBG
     @State private var onboardingBottomFrame = Arrays.onboardingBottomFrame
     @State private var onboardingDataArray = Arrays.onboardingDataArray
+    @State private var endOnboarding = false
     var body: some View {
         GeometryReader { geometry in
             let height = geometry.size.height
@@ -39,7 +41,7 @@ struct OnboardingView: View {
                     .offset(y: -height*0.33)
                     SubView_1(viewNumber: $viewNumber)
                     SubView_2(viewNumber: $viewNumber)
-                    SubView_3(viewNumber: $viewNumber)
+                    SubView_3(viewNumber: $viewNumber, endOnboarding: $endOnboarding)
                         ZStack {
                             Image(onboardingBottomFrame[0])
                                 .resizable()
@@ -61,6 +63,7 @@ struct OnboardingView: View {
                         .foregroundStyle(Color.onboardingColor2)
                         .multilineTextAlignment(.center)
                         .offset(y: height*0.23)
+                        .frame(maxWidth: screenWidth*0.9)
                         OnbButtonNext(size: 0.6, viewNumber: $viewNumber)
                         .offset(y: height*0.4)
                             .onTapGesture {
@@ -79,8 +82,10 @@ struct OnboardingView: View {
                 bgNumber += 1
             }
         } else {
-            bgNumber = 0
-            viewNumber = 0
+           endOnboarding = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                coordinator.navigate(to: .mainView)
+            }
         }
     }
     

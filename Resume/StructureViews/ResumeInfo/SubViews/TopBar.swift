@@ -20,6 +20,11 @@ struct TopBar: View {
     var body: some View {
         ZStack {
             Color.black.opacity(shadowOpacity)
+                .onTapGesture {
+                    if shadowOpacity > 0 {
+                        showHideSideMenu()
+                    }
+                }
             Image(.stepSubMenu)
                 .resizable()
                 .scaledToFit()
@@ -85,7 +90,6 @@ struct TopBar: View {
             Image(.topBarFrame)
                 .resizable()
                 .frame(width: screenWidth, height: screenHeight*0.1983)
-//                .shadow(color: .gray, radius: screenHeight*0.01)
                 .overlay(
                     VStack(spacing: screenHeight*0.00) {
                         Spacer()

@@ -45,14 +45,7 @@ class PDF_3_Generator: ObservableObject {
      * @return Data? - готовый PDF в виде данных
      */
     func generatePDF(formData: SurveyFormData, userPhoto: UIImage? = nil) -> Data? {
-        // Создаем метаданные PDF документа
-        let documentInfo = [
-            kCGPDFContextTitle: "\(formData.name) \(formData.surname) - Resume",
-            kCGPDFContextAuthor: "\(formData.name) \(formData.surname)",
-            kCGPDFContextSubject: "Professional Resume",
-            kCGPDFContextCreator: "Resume App"
-        ]
-        
+
         // Создаем PDF renderer
         let format = UIGraphicsPDFRendererFormat()
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: pageSize), format: format)
@@ -223,13 +216,6 @@ class PDF_3_Generator: ObservableObject {
         let blockX = leftMargin
         let blockY = pageSize.height - bottomMargin - blockHeight
         
-        let blockRect = CGRect(
-            x: blockX,
-            y: blockY,
-            width: blockWidth,
-            height: blockHeight
-        )
-        
         print("📋 Информационный блок: (\(blockX), \(blockY)), размер \(blockWidth)x\(blockHeight)")
         
         // Отрисовываем содержимое блока
@@ -303,7 +289,6 @@ class PDF_3_Generator: ObservableObject {
         let positionString = NSAttributedString(string: positionText, attributes: positionAttributes)
         
         // Вычисляем размер текста с учетом переноса строк
-        let textRect = CGRect(x: startX, y: startY, width: blockWidth, height: CGFloat.greatestFiniteMagnitude)
         let boundingRect = positionString.boundingRect(
             with: CGSize(width: blockWidth, height: CGFloat.greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
@@ -362,7 +347,6 @@ class PDF_3_Generator: ObservableObject {
         let summaryString = NSAttributedString(string: summaryText, attributes: summaryAttributes)
         
         // Вычисляем размер текста с переносом строк
-        let textRect = CGRect(x: startX, y: startY, width: blockWidth, height: CGFloat.greatestFiniteMagnitude)
         let boundingRect = summaryString.boundingRect(
             with: CGSize(width: blockWidth, height: CGFloat.greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
@@ -497,12 +481,7 @@ class PDF_3_Generator: ObservableObject {
          let blockX = pageSize.width - rightMargin - blockWidth
          let blockY = topMargin
          
-         let blockRect = CGRect(
-             x: blockX,
-             y: blockY,
-             width: blockWidth,
-             height: blockHeight
-         )
+       
          
          print("💼 Блок Experience: (\(blockX), \(blockY)), размер \(blockWidth)x\(blockHeight)")
          
@@ -567,7 +546,7 @@ class PDF_3_Generator: ObservableObject {
       * Отрисовывает одно место работы
       */
      private func drawSingleWorkExperience(work: WorkData, startX: CGFloat, startY: CGFloat, blockWidth: CGFloat, in context: CGContext) -> CGFloat {
-         var currentY = startY
+         let currentY = startY
          
          // 1. Стрелка arrowDown
          let arrowX = startX
@@ -730,13 +709,6 @@ class PDF_3_Generator: ObservableObject {
          let blockX = pageSize.width - rightMargin - blockWidth
          let blockY = startY
          
-         let blockRect = CGRect(
-             x: blockX,
-             y: blockY,
-             width: blockWidth,
-             height: blockHeight
-         )
-         
          print("🎓 Блок Education: (\(blockX), \(blockY)), размер \(blockWidth)x\(blockHeight)")
          
          var currentY = blockY
@@ -800,7 +772,7 @@ class PDF_3_Generator: ObservableObject {
       * Отрисовывает одно место образования
       */
      private func drawSingleEducationEntry(education: EducationData, startX: CGFloat, startY: CGFloat, blockWidth: CGFloat, in context: CGContext) -> CGFloat {
-         var currentY = startY
+         let currentY = startY
          
          // 1. Стрелка arrowDown
          let arrowX = startX
@@ -978,7 +950,7 @@ class PDF_3_Generator: ObservableObject {
          let itemHeight = iconSize + textHeight + 20 // Иконка + текст + отступ
          let horizontalSpacing = (blockWidth - CGFloat(skillsPerRow) * iconSize) / CGFloat(skillsPerRow - 1)
          
-         var currentY = startY
+         let currentY = startY
          
          for (index, skill) in skills.enumerated() {
              let row = index / skillsPerRow

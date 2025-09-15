@@ -79,11 +79,6 @@ struct PDFPreviewView: View {
                                 Button(action: generatePDF) {
                                     Image(systemName: "arrow.clockwise")
                                 }
-                                
-                                // Кнопка экспорта/поделиться
-                                Button(action: sharePDF) {
-                                    Image(systemName: "square.and.arrow.up")
-                                }
                             }
                         }
                     
@@ -145,13 +140,8 @@ struct PDFPreviewView: View {
                     }
                     self.isGenerating = false
                 }
-            } catch {
-                DispatchQueue.main.async {
-                    self.generationError = error.localizedDescription
-                    self.isGenerating = false
-                    print("❌ Ошибка генерации PDF: \(error)")
-                }
             }
+            
         }
     }
     

@@ -151,7 +151,7 @@ class SurveyManager: ObservableObject {
     
     // Принудительно загружаем все данные из CoreData в formData
     func forceReloadFromCoreData() {
-        guard let draft = draftPerson else { return }
+        guard let _ = draftPerson else { return }
         loadDataFromDraft()
         print("🔄 Принудительно перезагружены все данные из CoreData")
     }

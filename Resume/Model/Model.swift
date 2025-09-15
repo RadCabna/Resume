@@ -42,12 +42,13 @@ class AdditionalPoint: ObservableObject, Codable {
 }
 
 class Arrays {
-    static var onboardingBG = ["onboardingBG1", "onboardingBG2", "onboardingBG3"]
-    static var onboardingBottomFrame = ["onboardingBottomFrame1", "onboardingBottomFrame2", "onboardingBottomFrame3"]
+    static var onboardingBG = ["onboardingBG1", "onboardingBG2", "onboardingBG3", ""]
+    static var onboardingBottomFrame = ["onboardingBottomFrame1", "onboardingBottomFrame2", "onboardingBottomFrame3", "onboardingBottomFrame3"]
     static var onboardingDataArray = [
         ["Build Your Resume \nSmarter", "Craft a professional resume \nwith AI in minutes", "Answer simple questions and let AI help \nyou write impactful job descriptions, \nsummaries, and cover letters.", "Resume", "Write with AI"],
         ["Smart Suggestions, Tailored for You", "Polish every detail", "Get instant, personalized feedback to make your resume stand out. Edit with ease using AI-powered tools.", "Played a key role in team achievements", "Thrived in fast-changing environments", "Increased efficiency and output", "Improved operational effectiveness", ],
-        ["Start Free. Upgrade Anytime", "3 free AI edits to get you started", "Try before you subscribe. Upgrade to unlock premium templates, unlimited AI writing, and DOCX export"]
+        ["Start Free. Upgrade Anytime", "3 free AI edits to get you started", "Try before you subscribe. Upgrade to unlock premium templates, unlimited AI writing, and DOCX export"],
+        [""]
     ]
     
     static var stepMenuArray: [StepMenu] = [

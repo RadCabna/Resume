@@ -64,13 +64,7 @@ class PDF_2_Generator: ObservableObject {
      * @return Data? - готовый PDF в виде данных
      */
     func generatePDF(formData: SurveyFormData, userPhoto: UIImage? = nil) -> Data? {
-        // Создаем метаданные PDF документа
-        let documentInfo = [
-            kCGPDFContextTitle: "\(formData.name) \(formData.surname) - Resume",
-            kCGPDFContextAuthor: "\(formData.name) \(formData.surname)",
-            kCGPDFContextSubject: "Professional Resume",
-            kCGPDFContextCreator: "Resume App"
-        ]
+       
         
         // Создаем PDF renderer
         let format = UIGraphicsPDFRendererFormat()
@@ -139,8 +133,8 @@ class PDF_2_Generator: ObservableObject {
      * Отрисовывает имя и фамилию внутри изображения pdf_2_topRect с черной рамкой
      */
     private func drawNameInArea4(formData: SurveyFormData, in context: CGContext) {
-        // Область верхней секции (где находится pdf_2_topRect)
-        let topSectionRect = CGRect(x: 0, y: 0, width: pageSize.width, height: topSectionHeight)
+       
+       
         
         // Создаем полное имя
         let fullName = "\(formData.name) \(formData.surname)"
@@ -355,7 +349,7 @@ class PDF_2_Generator: ObservableObject {
         
         // Отрисовываем изображение pdf_2_longSkroll
         if let scrollImage = UIImage(named: "pdf_2_longSkroll") {
-            let imageRect = CGRect(x: blockX, y: imageY, width: blockWidth, height: 0)
+           
             
             // Вычисляем высоту с сохранением пропорций
             let imageAspectRatio = scrollImage.size.width / scrollImage.size.height
@@ -367,7 +361,7 @@ class PDF_2_Generator: ObservableObject {
             print("🖼️ Изображение pdf_2_longSkroll отрисовано: \(finalImageRect)")
             
             // Начинаем отрисовку мест работы после изображения
-            var currentY = imageY + scaledHeight + 30  // Отступ после изображения
+            let currentY = imageY + scaledHeight + 30  // Отступ после изображения
             
             drawWorkExperiences(formData: formData, in: context, startY: currentY, blockX: blockX, blockWidth: blockWidth)
             
@@ -977,7 +971,7 @@ class PDF_2_Generator: ObservableObject {
           let skillLevelWidth: CGFloat = 346  // Ширина изображения уровня
           let skillLevelHeight: CGFloat = 20  // Высота изображения уровня
           let skillSpacing: CGFloat = 30  // Отступ между скиллами
-          let boxPadding: CGFloat = 15  // Внутренние отступы в рамке
+         
           
           // Получаем выбранные скиллы
           let selectedHardSkills = formData.additionalSkills.hardSkills.filter { $0.active }.map { $0.name }

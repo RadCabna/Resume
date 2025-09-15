@@ -17,6 +17,7 @@ struct SubView_3: View {
     @State private var star1Rotate: CGFloat = 0
     @State private var star2Rotate: CGFloat = 0
     @Binding var viewNumber: Int
+    @Binding var endOnboarding: Bool
     var body: some View {
         ZStack {
             Image(.sub3List)
@@ -47,6 +48,12 @@ struct SubView_3: View {
         
         .onAppear {
             listOffset = screenHeight*0.35
+        }
+        
+        .onChange(of: endOnboarding) { _ in
+            if endOnboarding {
+                hideList()
+            }
         }
         
         .onChange(of: viewNumber) { _ in
@@ -84,5 +91,5 @@ struct SubView_3: View {
 }
 
 #Preview {
-    SubView_3(viewNumber: .constant(2))
+    SubView_3(viewNumber: .constant(2), endOnboarding: .constant(false))
 }

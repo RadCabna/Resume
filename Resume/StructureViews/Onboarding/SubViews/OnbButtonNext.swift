@@ -54,6 +54,8 @@ struct OnbButtonNext: View {
                 sectorAngle = 240
             case 2:
                 sectorAngle = 360
+            case 3:
+                sectorAngle = 360
             default:
                 break
             }

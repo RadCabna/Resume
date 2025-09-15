@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MainView: View {
+    @EnvironmentObject var coordinator: Coordinator
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var surveyManager: SurveyManager
     @State private var stepMenuPresented = false

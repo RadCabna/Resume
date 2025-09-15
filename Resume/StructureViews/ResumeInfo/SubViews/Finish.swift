@@ -26,6 +26,7 @@ struct Finish: View {
     @State private var showingPDFView = false
     @State private var showingPDF2View = false
     @State private var showingPDF3View = false
+    @State private var showingPDF3Share = false
     
     // MARK: - Photo Management
     @State private var profilePhoto: UIImage?
@@ -599,14 +600,18 @@ extension Finish {
                         .buttonStyle(PlainButtonStyle())
                         
                         // Download Button
-                        HStack {
-                            Image(.downloadIcon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: screenHeight*0.025)
-                            Text("Download PDF")
-                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
-                                .foregroundStyle(Color.gray)
+                        Button(action: {
+                            downloadPDF1()
+                        }) {
+                            HStack {
+                                Image(.downloadIcon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: screenHeight*0.025)
+                                Text("Download PDF")
+                                    .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                    .foregroundStyle(Color.gray)
+                            }
                         }
                         .frame(width: screenWidth*0.4)
                     }
@@ -650,14 +655,18 @@ extension Finish {
                         .buttonStyle(PlainButtonStyle())
                         
                         // Download Button
-                        HStack {
-                            Image(.downloadIcon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: screenHeight*0.025)
-                            Text("Download PDF")
-                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
-                                .foregroundStyle(Color.gray)
+                        Button(action: {
+                            downloadPDF2()
+                        }) {
+                            HStack {
+                                Image(.downloadIcon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: screenHeight*0.025)
+                                Text("Download PDF")
+                                    .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                    .foregroundStyle(Color.gray)
+                            }
                         }
                         .frame(width: screenWidth*0.4)
                     }
@@ -703,14 +712,18 @@ extension Finish {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        HStack {
-                            Image(.downloadIcon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: screenHeight*0.025)
-                            Text("Download PDF")
-                                .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
-                                .foregroundStyle(Color.gray)
+                        Button(action: {
+                            downloadPDF3()
+                        }) {
+                            HStack {
+                                Image(.downloadIcon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: screenHeight*0.025)
+                                Text("Download PDF")
+                                    .font(Font.custom("Figtree-Regular", size: screenHeight*0.016))
+                                    .foregroundStyle(Color.gray)
+                            }
                         }
                         .frame(width: screenWidth*0.4)
                     }
@@ -720,6 +733,192 @@ extension Finish {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, screenWidth*0.1)
+        }
+    }
+    
+    /**
+     * Скачивает PDF Template 1
+     */
+    private func downloadPDF1() {
+        print("📥 Начинаем скачивание PDF Template 1")
+        
+        // Убеждаемся что все данные сохранены
+        surveyManager.saveDraft()
+        surveyManager.forceReloadFromCoreData()
+        
+        // Генерируем PDF_1
+        guard let pdf1Data = pdfGenerator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image) else {
+            print("❌ Не удалось сгенерировать PDF Template 1")
+            return
+        }
+        
+        // Создаем временный файл
+        let fileName = "\(formData.name)_\(formData.surname)_Resume_Template1.pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try pdf1Data.write(to: tempURL)
+            print("✅ PDF Template 1 сохранен во временный файл: \(tempURL)")
+            
+            // Показываем системное меню для сохранения/отправки
+            DispatchQueue.main.async {
+                self.sharePDF1(url: tempURL)
+            }
+        } catch {
+            print("❌ Ошибка при сохранении PDF Template 1: \(error)")
+        }
+    }
+    
+    /**
+     * Скачивает PDF Template 2
+     */
+    private func downloadPDF2() {
+        print("📥 Начинаем скачивание PDF Template 2")
+        
+        // Убеждаемся что все данные сохранены
+        surveyManager.saveDraft()
+        surveyManager.forceReloadFromCoreData()
+        
+        // Генерируем PDF_2
+        guard let pdf2Data = pdf2Generator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image) else {
+            print("❌ Не удалось сгенерировать PDF Template 2")
+            return
+        }
+        
+        // Создаем временный файл
+        let fileName = "\(formData.name)_\(formData.surname)_Resume_Template2.pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try pdf2Data.write(to: tempURL)
+            print("✅ PDF Template 2 сохранен во временный файл: \(tempURL)")
+            
+            // Показываем системное меню для сохранения/отправки
+            DispatchQueue.main.async {
+                self.sharePDF2(url: tempURL)
+            }
+        } catch {
+            print("❌ Ошибка при сохранении PDF Template 2: \(error)")
+        }
+    }
+    
+    /**
+     * Скачивает PDF Template 3
+     */
+    private func downloadPDF3() {
+        print("📥 Начинаем скачивание PDF Template 3")
+        
+        // Убеждаемся что все данные сохранены
+        surveyManager.saveDraft()
+        surveyManager.forceReloadFromCoreData()
+        
+        // Генерируем PDF_3
+        guard let pdf3Data = pdf3Generator.generatePDF(formData: formData, userPhoto: formData.photos.first?.image) else {
+            print("❌ Не удалось сгенерировать PDF Template 3")
+            return
+        }
+        
+        // Создаем временный файл
+        let fileName = "\(formData.name)_\(formData.surname)_Resume_Template3.pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try pdf3Data.write(to: tempURL)
+            print("✅ PDF Template 3 сохранен во временный файл: \(tempURL)")
+            
+            // Показываем системное меню для сохранения/отправки
+            DispatchQueue.main.async {
+                self.sharePDF3(url: tempURL)
+            }
+        } catch {
+            print("❌ Ошибка при сохранении PDF Template 3: \(error)")
+        }
+    }
+    
+    /**
+     * Показывает системное меню для экспорта PDF Template 3
+     */
+    private func sharePDF3(url: URL) {
+        let activityController = UIActivityViewController(
+            activityItems: [url],
+            applicationActivities: nil
+        )
+        
+        // Настраиваем заголовок
+        activityController.setValue("\(formData.name) \(formData.surname) - Resume Template 3", forKey: "subject")
+        
+        // Для iPad - задаем источник popover
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first,
+           let rootViewController = window.rootViewController {
+            
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = window
+                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityController, animated: true) {
+                print("📤 Системное меню экспорта PDF Template 3 открыто")
+            }
+        }
+    }
+    
+    /**
+     * Показывает системное меню для экспорта PDF Template 1
+     */
+    private func sharePDF1(url: URL) {
+        let activityController = UIActivityViewController(
+            activityItems: [url],
+            applicationActivities: nil
+        )
+        
+        // Настраиваем заголовок
+        activityController.setValue("\(formData.name) \(formData.surname) - Resume Template 1", forKey: "subject")
+        
+        // Для iPad - задаем источник popover
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first,
+           let rootViewController = window.rootViewController {
+            
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = window
+                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityController, animated: true) {
+                print("📤 Системное меню экспорта PDF Template 1 открыто")
+            }
+        }
+    }
+    
+    /**
+     * Показывает системное меню для экспорта PDF Template 2
+     */
+    private func sharePDF2(url: URL) {
+        let activityController = UIActivityViewController(
+            activityItems: [url],
+            applicationActivities: nil
+        )
+        
+        // Настраиваем заголовок
+        activityController.setValue("\(formData.name) \(formData.surname) - Resume Template 2", forKey: "subject")
+        
+        // Для iPad - задаем источник popover
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first,
+           let rootViewController = window.rootViewController {
+            
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = window
+                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityController, animated: true) {
+                print("📤 Системное меню экспорта PDF Template 2 открыто")
+            }
         }
     }
     

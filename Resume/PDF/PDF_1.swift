@@ -383,12 +383,7 @@ class PDF_1_Generator: ObservableObject {
         var currentY = rect3.minY + LayoutConfig.sectionTopMargin + 80
         let textX = rect3.minX + LayoutConfig.nameLeftMargin
         
-        // Заголовок секции
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: FontConfig.sectionTitleFont,
-            .foregroundColor: ColorConfig.sectionTitleColor
-        ]
-//
+       
         // Контент - email, телефон и т.д.
         let contentX = textX + LayoutConfig.contentLeftIndent
         let contentAttributes: [NSAttributedString.Key: Any] = [
@@ -504,7 +499,7 @@ class PDF_1_Generator: ObservableObject {
         
         // Проходим по всем образованиям
         for (index, education) in formData.educations.enumerated() {
-            let blockStartY = currentY // Запоминаем начало блока для отладки
+           
             
             // Период обучения
             let periodText = education.isCurrentlyStudying ?
@@ -631,7 +626,7 @@ class PDF_1_Generator: ObservableObject {
         for (index, work) in formData.works.enumerated() {
             let workPosition = index % 4 // 0,1,2,3 повторяется
             let useLeftColumn = (workPosition == 0 || workPosition == 2) // 1-я и 3-я в левой колонке
-            let useRightColumn = (workPosition == 1 || workPosition == 3) // 2-я и 4-я в правой колонке
+            
             
             // Определяем X и Y для текущей работы
             let workX = useLeftColumn ? contentX : rightColumnX
@@ -639,7 +634,6 @@ class PDF_1_Generator: ObservableObject {
             
             print("💼 Размещение работы #\(index + 1) '\(work.companyName)' в позиции (\(workX), \(workY)), колонка: \(useLeftColumn ? "левая" : "правая")")
             
-            let workStartY = workY // Запоминаем начальную Y для данной работы
             
             // 1. Дата (период работы) - ПЕРВЫМ
             let periodText = work.isCurentlyWork ? 
